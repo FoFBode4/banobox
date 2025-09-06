@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="uk" x-data="{ mobileMenu: false }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Кошик — Banobox</title>
+  <!-- Alpine.js + Tailwind -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <!-- Логіка кошика/каталогу (глобальні функції saveCart/updateCartCount тощо) -->
+  <script defer src="assets/js/banobox.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <!-- Header -->
+  <header class="bg-white bg-opacity-90 backdrop-blur-sm shadow-md fixed w-full z-50">
+    <div class="container mx-auto flex items-center justify-between p-4">
+      <a href="index.html" class="text-2xl font-bold text-blue-600">Banobox</a>
+      <nav class="hidden md:flex space-x-6">
+        <a href="index.html#products" class="hover:text-blue-600 flex items-center">
+          <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M3 4h18M3 12h18M3 20h18"/>
+          </svg>
+          <span class="ml-1">Товари</span>
+        </a>
+
+
+
+
+        <a href="cart.html" class="relative flex items-center hover:text-blue-600">
+          <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+          </svg>
+          <span class="cart-count absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">0</span>
+          <span class="ml-1">Кошик</span>
+        </a>
+        <a href="profile.html" class="flex items-center hover:text-blue-600" id="profile-btn">
+          <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5.121 17.804A13.945 13.945 0 0112 15c2.5 0 4.847.695 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="ml-1">Профіль</span>
+        </a>
+      </nav>
+      <button class="md:hidden" @click="mobileMenu = !mobileMenu" aria-label="Меню">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <nav x-show="mobileMenu" class="md:hidden bg-white shadow-inner">
+      <a href="index.html#products" class="block p-2 hover:bg-gray-100">Товари</a>
+      <a href="cart.html" class="block p-2 hover:bg-gray-100">Кошик</a>
+      <a href="profile.html" class="block p-2 hover:bg-gray-100">Профіль</a>
+    </nav>
+  </header>
+
+  <!-- Main -->
+  <main class="pt-28 container mx-auto p-4 max-w-4xl">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold">Ваш кошик</h1>
+      <button id="clear-cart" class="text-sm text-red-600 hover:underline">Очистити кошик</button>
+    </div>
+
+    <div id="cart-items" class="space-y-4">
+      <!-- items injected via JS -->
+    </div>
+
+    <div id="cart-summary" class="mt-6"></div>
+
+    <a id="checkout-btn" href="checkout.html"
+       class="btn-primary mt-4 inline-block disabled:opacity-50 disabled:pointer-events-none">
+      Оформити замовлення
+    </a>
+
+
+    
+<a id="nav-orders" href="orders.html" class="btn-primary mt-4 inline-block disabled:opacity-50 disabled:pointer-events-none">
+  Історія замовлень
+</a>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white py-6 text-center text-sm text-gray-600 mt-8">
+    &copy; 2025 Banobox. Всі права захищені.
+  </footer>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white shadow-inner flex justify-around items-center py-2 md:hidden z-50">
+    <a href="index.html#products" class="flex flex-col items-center">
+      <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M3 4h18M3 12h18M3 20h18"/>
+      </svg>
+      <span class="text-xs mt-1">Товари</span>
+    </a>
+    <a href="cart.html" class="relative flex flex-col items-center">
+      <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+      </svg>
+      <span class="cart-count absolute top-0 right-6 bg-red-500 text-white text-xs rounded-full px-1">0</span>
+      <span class="text-xs mt-1">Кошик</span>
+    </a>
+    <a href="profile.html" class="flex flex-col items-center">
+      <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M5.121 17.804A13.945 13.945 0 0112 15c2.5 0 4.847.695 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span class="text-xs mt-1">Профіль</span>
+    </a>
+  </nav>
+
+  <!-- Enhanced Interactions -->
+  <script src="assets/js/enhanced_interactions.js" defer></script>
+
+  <script>
+    /* === Допоміжні: однакова формула ціни зі знижкою, як на checkout.html === */
+    function calcUnitPrice(item) {
+      const price = Number(item.price || 0);
+      const discount = Number(item.discount || 0);
+      return discount ? +(price * (100 - discount) / 100).toFixed(2) : +price.toFixed(2);
+    }
+
+    function getCart() {
+      try { return JSON.parse(localStorage.getItem('banobox_cart') || '[]') || []; }
+      catch { return []; }
+    }
+    function setCart(arr) {
+      localStorage.setItem('banobox_cart', JSON.stringify(arr));
+      // якщо в глобальному скрипті є updateCartCount — оновлюємо бейджі
+      try { if (typeof updateCartCount === 'function') updateCartCount(); } catch {}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCart();
+
+      // Очистити кошик
+      document.getElementById('clear-cart').addEventListener('click', () => {
+        if (!confirm('Очистити весь кошик?')) return;
+        setCart([]);
+        renderCart();
+      });
+    });
+
+    function renderCart() {
+      const cart = getCart();
+      const container = document.getElementById('cart-items');
+      const summary   = document.getElementById('cart-summary');
+      const checkout  = document.getElementById('checkout-btn');
+
+      container.innerHTML = '';
+      summary.innerHTML   = '';
+      let total = 0;
+
+      if (!Array.isArray(cart) || cart.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white p-6 rounded shadow text-center text-gray-600">
+            Ваш кошик порожній. <a class="text-blue-600 hover:underline" href="index.html#products">Перейти до каталогу</a>
+          </div>`;
+        checkout.classList.add('disabled','pointer-events-none','opacity-50');
+        return;
+      }
+      checkout.classList.remove('disabled','pointer-events-none','opacity-50');
+
+      cart.forEach((item, idx) => {
+        const unit = calcUnitPrice(item);
+        const lineTotal = unit * Number(item.quantity || 0);
+        total += lineTotal;
+
+        // Безпечні назви для опцій (підтримуємо різні ключі, що можуть бути в localStorage)
+        const volumeText  = item.volume_label || item.volume_ml ? `${item.volume_ml} мл` :
+                            item.volume ? `${item.volume}` : null;
+        const colorText   = item.color_name || item.color || null;
+        const materialTxt = item.material_name || item.material || null;
+
+        const img = (Array.isArray(item.photos) && item.photos[0]) ? item.photos[0] : 'assets/img/placeholder.png';
+
+        const card = document.createElement('div');
+        card.className = 'bg-white p-4 rounded shadow-md flex flex-col md:flex-row md:items-center';
+        card.innerHTML = `
+          <img src="${img}" alt="${escapeHtml(item.title||'Товар')}"
+               class="w-20 h-20 object-contain rounded mb-3 md:mb-0 md:mr-4 bg-gray-50">
+          <div class="flex-grow">
+            <p class="font-semibold text-base">${escapeHtml(item.title||'Товар')}</p>
+            <p class="text-sm text-gray-500">POS: ${escapeHtml(item.pos||'')}</p>
+
+            <div class="flex flex-wrap gap-2 mt-1">
+              ${volumeText ? `<span class="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 border border-blue-200">Об’єм: ${escapeHtml(volumeText)}</span>` : ''}
+              ${colorText  ? `<span class="px-2 py-0.5 text-xs rounded bg-green-50 text-green-700 border border-green-200">Колір: ${escapeHtml(colorText)}</span>` : ''}
+              ${materialTxt? `<span class="px-2 py-0.5 text-xs rounded bg-gray-50 text-gray-700 border border-gray-200">Матеріал: ${escapeHtml(materialTxt)}</span>` : ''}
+            </div>
+          </div>
+
+          <div class="text-right mt-2 md:mt-0 md:mr-4 min-w-[92px]">
+            ${item.discount
+              ? `<div class="text-red-600 font-semibold">₴${unit.toFixed(2)}</div>
+                 <div class="text-gray-400 text-sm line-through">₴${Number(item.price||0).toFixed(2)}</div>`
+              : `<div class="font-semibold text-base">₴${unit.toFixed(2)}</div>`}
+          </div>
+
+          <div class="flex items-center mt-2 md:mt-0 md:mr-4">
+            <button data-idx="${idx}" class="qty-minus px-3 py-1 bg-gray-200 rounded" aria-label="Менше">−</button>
+            <input type="number" data-idx="${idx}" class="qty-input w-14 mx-2 text-center border rounded"
+                   value="${Number(item.quantity||1)}" min="1">
+            <button data-idx="${idx}" class="qty-plus px-3 py-1 bg-gray-200 rounded" aria-label="Більше">＋</button>
+          </div>
+
+          <div class="text-right font-semibold text-base mt-2 md:mt-0 md:ml-4 min-w-[110px]">
+            ₴${lineTotal.toFixed(2)}
+          </div>
+
+          <button data-idx="${idx}"
+                  class="remove-item text-red-600 hover:underline text-sm mt-2 md:mt-0 md:ml-4">
+            Видалити
+          </button>
+        `;
+        container.append(card);
+      });
+
+      summary.innerHTML = `
+        <div class="bg-white p-4 rounded shadow flex justify-end items-center space-x-4">
+          <span class="font-semibold">Загальна сума:</span>
+          <span class="text-xl font-bold text-blue-600">₴${total.toFixed(2)}</span>
+        </div>
+      `;
+      bindCartEvents();
+    }
+
+    function bindCartEvents() {
+      document.querySelectorAll('.qty-minus')
+        .forEach(btn => btn.addEventListener('click', () => changeQty(+btn.dataset.idx, -1)));
+      document.querySelectorAll('.qty-plus')
+        .forEach(btn => btn.addEventListener('click', () => changeQty(+btn.dataset.idx, +1)));
+      document.querySelectorAll('.qty-input')
+        .forEach(inp => inp.addEventListener('change', () => setQty(+inp.dataset.idx, Math.max(1, +inp.value || 1))));
+      document.querySelectorAll('.remove-item')
+        .forEach(btn => btn.addEventListener('click', () => removeItem(+btn.dataset.idx)));
+    }
+
+    function changeQty(idx, delta) {
+      const cart = getCart();
+      if (!cart[idx]) return;
+      cart[idx].quantity = Math.max(1, Number(cart[idx].quantity||1) + delta);
+      setCart(cart);
+      renderCart();
+    }
+
+    function setQty(idx, val) {
+      const cart = getCart();
+      if (!cart[idx]) return;
+      cart[idx].quantity = Math.max(1, Number(val||1));
+      setCart(cart);
+      renderCart();
+    }
+
+    function removeItem(idx) {
+      const cart = getCart();
+      cart.splice(idx, 1);
+      setCart(cart);
+      renderCart();
+    }
+
+    // Маленький санітайзер для відображення тексту
+    function escapeHtml(s) {
+      return String(s||'')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+  </script>
+
+
+<script>
+  // ── Хелпери авторизації (працюємо з тим самим banobox_user, що ставить /api/me)
+  function isAuthedLocal() {
+    try {
+      const u = JSON.parse(localStorage.getItem('banobox_user') || '{}');
+      return !!(u && (u.id || u.user_id || u.email || u.phone));
+    } catch { return false; }
+  }
+  async function ensureAuthFromApi() {
+    try {
+      const r = await fetch('/api/me', { credentials: 'include', headers:{'Accept':'application/json'} });
+      if (!r.ok) return false;
+      const j = await r.json();
+      const u = j.user || j.profile || j.data || j;
+      if (u && (u.id || u.email || u.phone)) {
+        localStorage.setItem('banobox_user', JSON.stringify(u));
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  // ── Показуємо кнопку "Історія замовлень" тільки для авторизованих
+  document.addEventListener('DOMContentLoaded', async () => {
+    const link = document.getElementById('nav-orders');
+    if (!link) return;
+    let authed = isAuthedLocal();
+    if (!authed) authed = await ensureAuthFromApi(); // підстрахуємось сесією
+    if (authed) link.classList.remove('hidden');
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,121 @@
+cd C:\Users\CMP\Desktop\banobox_project
+npm install
+npm start
+
+
+-- 1.1 Перевірити наявні категорії
+SELECT id, name FROM categories;
+
+-- 1.2 Вставити нову
+INSERT INTO categories(name)
+VALUES ('Нова категорія');
+
+-- 2.1 Дізнатися id батьківської категорії
+SELECT id FROM categories WHERE name = 'Нова категорія';
+
+-- 2.2 Вставити підкатегорію (category_id → 7)
+INSERT INTO subcategories(category_id, name)
+VALUES (7, 'Нова підкатегорія');
+
+-- отримати subcategory_id (наприклад, 12)
+SELECT id FROM subcategories WHERE name='Нова підкатегорія';
+
+-- вставити об’єм
+INSERT INTO volumes(subcategory_id, volume)
+VALUES (12, '150 мл');
+
+INSERT INTO volumes(subcategory_id, category_id, volume)
+VALUES (NULL, 7, '200 мл');
+
+-- 4.1 Перевірити наявні кольори
+SELECT id, color_name FROM colors;
+
+-- 4.2 Додати, якщо такого ще немає
+INSERT INTO colors(color_name)
+VALUES ('Прозорий');
+
+-- 5.1 Дізнатися всі потрібні зовнішні ключі:
+
+-- category_id  (наприклад, 7)
+SELECT id FROM categories    WHERE name='Нова категорія';
+
+-- subcategory_id (наприклад, 12)
+SELECT id FROM subcategories WHERE name='Нова підкатегорія';
+
+-- volume_id    (наприклад, 34)
+SELECT id FROM volumes       WHERE volume='150 мл';
+
+-- color_id     (наприклад, 5)
+SELECT id FROM colors        WHERE color_name='Прозорий';
+
+-- 5.2 Вставити товар
+INSERT INTO products
+  (pos, title, price, discount,
+   category_id, subcategory_id,
+   volume_id, color_id,
+   material, diameter, dosage,
+   description,
+   created_at)
+VALUES
+  ('NK-PR-150',                 -- POS-код
+   'Продукт новий 150 мл',      -- Назва
+   49.90,                       -- Ціна
+   10,                          -- Знижка (%)
+   7,                           -- category_id
+   12,                          -- subcategory_id
+   34,                          -- volume_id
+   5,                           -- color_id
+   'Пластик',                   -- material
+   '28 мм',                     -- diameter
+   '0.5 мл',                    -- dosage
+   'Короткий опис товару...',   -- description
+   CURRENT_TIMESTAMP            -- created_at
+  );
+
+-- 6.1 Дізнатися product_id щойно створеного товару
+SELECT id FROM products WHERE pos='NK-PR-150';
+
+-- Припустимо це → 102
+-- 6.2 Вставити один або кілька URL/шляхів до зображень
+INSERT INTO product_photos(product_id, url)
+VALUES
+  (102, '/assets/img/NK-PR-150-1.png'),
+  (102, '/assets/img/NK-PR-150-2.png');
+
+
+banobox/
+│
+├── 📂 assets
+│   ├── 📂 css
+│   │   ├── style.css                 # Загальні стилі інтерфейсу:contentReference[oaicite:0]{index=0}
+│   │   └── auth.css                  # Стилі для авторизації:contentReference[oaicite:1]{index=1}
+│   │
+│   └── 📂 js
+│       ├── banobox.js                # Логіка роботи кошика:contentReference[oaicite:2]{index=2}
+│       └── enhanced_interactions.js  # Додаткові інтерактивні функції:contentReference[oaicite:3]{index=3}
+│
+├── 📂 db
+│   ├── DBbanobox.db                  # SQLite база даних
+│   ├── database_schema.sql           # SQL-схема для ініціалізації та міграцій:contentReference[oaicite:4]{index=4}
+│   └── sessions.sqlite               # Сесії користувачів (автоматично сервером)
+│
+├── 📂 img                            # Зображення: фото товарів, логотипи, іконки тощо.
+│
+├── 📂 node_modules                   # npm-залежності
+│
+├── admin.html                        # Панель адміністратора:contentReference[oaicite:5]{index=5}
+├── cart.html                         # Сторінка кошика:contentReference[oaicite:6]{index=6}
+├── checkout.html                     # Оформлення замовлення:contentReference[oaicite:7]{index=7}
+├── index.html                        # Головна сторінка (каталог):contentReference[oaicite:8]{index=8}
+├── login.html                        # Сторінка входу:contentReference[oaicite:9]{index=9}
+├── orders.html                       # Історія замовлень:contentReference[oaicite:10]{index=10}
+├── profile.html                      # Профіль користувача:contentReference[oaicite:11]{index=11}
+├── register.html                     # Реєстрація користувачів:contentReference[oaicite:12]{index=12}
+├── success.html                      # Сторінка успішного замовлення:contentReference[oaicite:13]{index=13}
+│
+├── package.json                      # npm-залежності та скрипти запуску
+├── package-lock.json                 # npm-залежності з версіями:contentReference[oaicite:14]{index=14}
+│
+├── server.js                         # Основний файл серверу (налаштування Express):contentReference[oaicite:15]{index=15}
+├── server_routes.js                  # API-маршрути: авторизація, категорії, підкатегорії:contentReference[oaicite:16]{index=16}
+└── server_routes_orders.js           # API-маршрути для замовлень:contentReference[oaicite:17]{index=17}

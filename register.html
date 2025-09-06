@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Реєстрація — Banobox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    :root{ --brand:#2563eb; --brand-2:#7c3aed; }
+    .blob{ filter: blur(60px); opacity:.6; }
+    .glass{ background: rgba(255,255,255,.65); backdrop-filter: blur(12px); }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; font-weight:600; border-radius:14px; transition:.2s; padding:.7rem 1rem; }
+    .btn-primary{ background:var(--brand); color:#fff; } .btn-primary:hover{ filter:brightness(.95) }
+    .input{ width:100%; border:1px solid #e5e7eb; border-radius:14px; padding:.7rem .9rem; outline:none; }
+    .input:focus{ box-shadow:0 0 0 3px rgba(37,99,235,.2); border-color:#93c5fd; }
+    .field{ margin-top:.75rem }
+    .error{ color:#ef4444; font-size:.9rem; display:none; }
+    .meter{ height:8px; border-radius:999px; background:#e5e7eb; overflow:hidden; }
+    .meter>span{ display:block; height:100%; width:0; background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981); transition:width .25s; }
+    .toast{ position:fixed; right:1rem; top:1rem; z-index:50; padding:.75rem 1rem; border-radius:.75rem; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,.15); display:none;}
+    .toast-show{ display:block; }
+    .phone-wrap{ display:flex; gap:.5rem; align-items:center; }
+    .phone-prefix{ background:#f3f4f6; border:1px solid #e5e7eb; border-radius:14px; padding:.7rem .9rem; white-space:nowrap; }
+    .hint{ font-size:.85rem; color:#6b7280; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative">
+
+  <!-- Бекграунд-бабли -->
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <div class="blob absolute -top-20 -left-20 w-72 h-72 rounded-full" style="background:radial-gradient(120px 120px at center, var(--brand), transparent)"></div>
+    <div class="blob absolute -bottom-16 left-1/3 w-80 h-80 rounded-full" style="background:radial-gradient(120px 120px at center, var(--brand-2), transparent)"></div>
+    <div class="blob absolute -right-16 top-24 w-72 h-72 rounded-full" style="background:radial-gradient(120px 120px at center, #22d3ee, transparent)"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Хедер -->
+  <header class="relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="text-xl font-semibold text-blue-700">Banobox</a>
+      <nav class="flex items-center gap-4 text-sm">
+        <a href="login.html" class="text-gray-600 hover:text-gray-900">Вхід</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Контент -->
+  <main class="relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-8 items-center">
+      <!-- Ліва частина -->
+      <section class="hidden md:block">
+        <h1 class="text-4xl font-bold leading-tight">
+          Створіть акаунт <span class="text-blue-700">Banobox</span>
+        </h1>
+        <p class="mt-4 text-gray-600 text-lg">
+          Швидке оформлення, історія замовлень і повторне замовлення у два кліки.
+        </p>
+        <div class="mt-6 p-4 rounded-2xl border glass">
+          <p class="text-sm text-gray-700">
+            Після реєстрації ми відразу залогінимо вас і перенаправимо у профіль.
+          </p>
+        </div>
+      </section>
+
+      <!-- Права частина: форма -->
+      <section class="glass rounded-2xl shadow-xl border p-6 md:p-8">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-semibold">Реєстрація</h2>
+          <a href="login.html" class="text-sm text-blue-700 hover:underline">Вже маєте акаунт? Увійти</a>
+        </div>
+
+        <form id="regForm" class="mt-6 space-y-4" novalidate>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="field">
+              <label class="text-sm text-gray-600">Ім’я</label>
+              <input id="firstName" type="text" class="input" placeholder="Іван" required />
+              <div id="firstErr" class="error">Мінімум 2 символи</div>
+            </div>
+            <div class="field">
+              <label class="text-sm text-gray-600">Прізвище</label>
+              <input id="lastName" type="text" class="input" placeholder="Петренко" required />
+              <div id="lastErr" class="error">Мінімум 2 символи</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="text-sm text-gray-600">Номер телефону</label>
+            <div class="phone-wrap">
+              <span class="phone-prefix">+380</span>
+              <input id="phone" inputmode="numeric" pattern="\\d{9}" maxlength="12"
+                     class="input" placeholder="XX XXX XX XX" autocomplete="tel" />
+            </div>
+            <div class="hint mt-1">Введіть 9 цифр без коду країни. Напр.: <b>50 123 45 67</b></div>
+            <div id="phoneErr" class="error">Вкажіть 9 цифр номера</div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="field">
+              <label class="text-sm text-gray-600">Пароль</label>
+              <div class="relative">
+                <input id="password" type="password" class="input pr-12" placeholder="Мін. 6 символів" required minlength="6" />
+                <button type="button" id="togglePass1" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-sm text-gray-500 hover:text-gray-800">Показати</button>
+              </div>
+              <div class="meter mt-2"><span id="meterBar"></span></div>
+              <div id="passErr" class="error">Мінімум 6 символів</div>
+            </div>
+            <div class="field">
+              <label class="text-sm text-gray-600">Повторіть пароль</label>
+              <div class="relative">
+                <input id="password2" type="password" class="input pr-12" placeholder="Ще раз пароль" required minlength="6" />
+                <button type="button" id="togglePass2" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-sm text-gray-500 hover:text-gray-800">Показати</button>
+              </div>
+              <div id="pass2Err" class="error">Паролі не співпадають</div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-full h-11" type="submit" id="submitBtn">
+            Створити акаунт
+          </button>
+
+          <div id="formErr" class="error text-center"></div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script defer src="assets/js/banobox.js"></script>
+  <script>
+    const $ = s=>document.querySelector(s);
+    const show = (el, on)=> el.style.display = on ? 'block' : 'none';
+    function toast(msg, ok=true){
+      const t = $('#toast');
+      t.textContent = msg;
+      t.style.background = ok ? '#16a34a' : '#ef4444';
+      t.classList.add('toast-show');
+      setTimeout(()=>t.classList.remove('toast-show'), 2200);
+    }
+
+    // Номер телефону: 9 цифр (без +380) + легка маска для відображення
+    const onlyDigits9 = v => (v||'').replace(/\D/g,'').slice(0,9);
+    function prettyPhone9(v){
+      const d = onlyDigits9(v);
+      return d.replace(/^(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2}).*$/, (_,a,b,c,d2)=>[a,b,c,d2].filter(Boolean).join(' ').trim());
+    }
+    const phoneInp = $('#phone');
+    phoneInp.addEventListener('input', (e)=>{ e.target.value = prettyPhone9(e.target.value); });
+
+    // Показ/приховати паролі
+    const tog = (btnId, inpId)=> $(btnId).addEventListener('click', ()=>{
+      const inp = $(inpId);
+      const on = inp.type === 'password';
+      inp.type = on ? 'text' : 'password';
+      $(btnId).textContent = on ? 'Сховати' : 'Показати';
+    });
+    tog('#togglePass1','#password');
+    tog('#togglePass2','#password2');
+
+    // Індикатор складності
+    function scorePassword(p){
+      let s = 0; if (p.length >= 6) s += 30; if (/[A-Z]/.test(p)) s += 20;
+      if (/[a-z]/.test(p)) s += 20; if (/\d/.test(p)) s += 15; if (/[^A-Za-z0-9]/.test(p)) s += 15;
+      return Math.min(100, s);
+    }
+    $('#password').addEventListener('input', (e)=> $('#meterBar').style.width = scorePassword(e.target.value) + '%');
+
+    // Сабміт
+    $('#regForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const first = $('#firstName').value.trim();
+      const last  = $('#lastName').value.trim();
+      const phone9= onlyDigits9($('#phone').value);
+      const pass  = $('#password').value;
+      const pass2 = $('#password2').value;
+
+      show($('#firstErr'), first.length < 2);
+      show($('#lastErr'),  last.length  < 2);
+      show($('#phoneErr'), phone9.length !== 9);
+      show($('#passErr'),  pass.length  < 6);
+      show($('#pass2Err'), pass !== pass2);
+      if (first.length<2 || last.length<2 || phone9.length!==9 || pass.length<6 || pass!==pass2) return;
+
+      const fullName = `${first} ${last}`.trim();
+      const btn = $('#submitBtn'); btn.disabled = true; btn.textContent = 'Створюємо...';
+      $('#formErr').textContent = '';
+
+      try{
+        // ❗️бек очікує "email" — пишемо туди 9 цифр номера
+        const r = await fetch('/api/register', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ name: fullName, email: phone9, password: pass })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Помилка реєстрації');
+
+        const me = await fetch('/api/me', { credentials:'include' }).then(x=>x.json());
+        if (me?.user) localStorage.setItem('banobox_user', JSON.stringify(me.user));
+
+        toast('Акаунт створено!', true);
+        setTimeout(()=> location.href = 'profile.html', 300);
+      }catch(err){
+        $('#formErr').textContent = err.message;
+        toast(err.message, false);
+      }finally{
+        btn.disabled = false; btn.textContent = 'Створити акаунт';
+      }
+    });
+  </script>
+</body>
+</html>

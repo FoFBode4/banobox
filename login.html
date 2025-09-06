@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Вхід — Banobox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    :root{ --brand:#2563eb; --brand-2:#7c3aed; }
+    .blob{ filter: blur(60px); opacity:.6; }
+    .glass{ background: rgba(255,255,255,.65); backdrop-filter: blur(12px); }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; font-weight:600; border-radius:14px; transition:.2s; padding:.7rem 1rem; }
+    .btn-primary{ background:var(--brand); color:#fff; } .btn-primary:hover{ filter:brightness(.95) }
+    .btn-ghost{ background:#f3f4f6; }
+    .input{ width:100%; border:1px solid #e5e7eb; border-radius:14px; padding:.7rem .9rem; outline:none; }
+    .input:focus{ box-shadow:0 0 0 3px rgba(37,99,235,.2); border-color:#93c5fd; }
+    .field{ margin-top:.75rem }
+    .error{ color:#ef4444; font-size:.9rem; display:none; }
+    .toast{ position:fixed; right:1rem; top:1rem; z-index:50; padding:.75rem 1rem; border-radius:.75rem; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,.15); display:none;}
+    .toast-show{ display:block; }
+    .phone-wrap{ display:flex; gap:.5rem; align-items:center; }
+    .phone-prefix{ background:#f3f4f6; border:1px solid #e5e7eb; border-radius:14px; padding:.7rem .9rem; white-space:nowrap; }
+    .hint{ font-size:.85rem; color:#6b7280; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative">
+
+  <!-- Бекграунд-бабли -->
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <div class="blob absolute -top-20 -left-20 w-72 h-72 rounded-full" style="background:radial-gradient(120px 120px at center, var(--brand), transparent)"></div>
+    <div class="blob absolute -bottom-16 left-1/3 w-80 h-80 rounded-full" style="background:radial-gradient(120px 120px at center, var(--brand-2), transparent)"></div>
+    <div class="blob absolute -right-16 top-24 w-72 h-72 rounded-full" style="background:radial-gradient(120px 120px at center, #22d3ee, transparent)"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Хедер -->
+  <header class="relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="text-xl font-semibold text-blue-700">Banobox</a>
+      <nav class="flex items-center gap-4 text-sm">
+        <a href="index.html#products" class="text-gray-600 hover:text-gray-900">Каталог</a>
+        <a href="register.html" class="text-gray-600 hover:text-gray-900">Реєстрація</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Контент -->
+  <main class="relative z-10">
+    <div class="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-8 items-center">
+      <!-- Ліва частина: слоган -->
+      <section class="hidden md:block">
+        <h1 class="text-4xl font-bold leading-tight">
+          Вхід за номером <span class="text-blue-700">+380</span>
+        </h1>
+        <p class="mt-4 text-gray-600 text-lg">
+          Повторні замовлення, історія покупок та персональні пропозиції — все у вашому профілі.
+        </p>
+        <ul class="mt-6 space-y-3 text-gray-700">
+          <li class="flex items-center gap-2">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-xs">✓</span>
+            Історія замовлень та швидке «Повторити»
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-xs">✓</span>
+            Збережені параметри товарів
+          </li>
+        </ul>
+      </section>
+
+      <!-- Права частина: форма -->
+      <section class="glass rounded-2xl shadow-xl border p-6 md:p-8">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-semibold">Вхід</h2>
+          <a href="register.html" class="text-sm text-blue-700 hover:underline">Немає акаунта? Зареєструватись</a>
+        </div>
+
+        <form id="loginForm" class="mt-6 space-y-4" novalidate>
+          <div class="field">
+            <label class="text-sm text-gray-600">Номер телефону</label>
+            <div class="phone-wrap">
+              <span class="phone-prefix">+380</span>
+              <input id="phone" inputmode="numeric" pattern="\\d{9}" maxlength="12"
+                     class="input" placeholder="XX XXX XX XX" autocomplete="tel" />
+            </div>
+            <div class="hint mt-1">Введіть 9 цифр без коду країни. Напр.: <b>50 123 45 67</b></div>
+            <div id="phoneErr" class="error">Вкажіть 9 цифр номера</div>
+          </div>
+
+          <div class="field">
+            <label class="text-sm text-gray-600">Пароль</label>
+            <div class="relative">
+              <input id="password" type="password" class="input pr-12" placeholder="••••••••" required minlength="6" />
+              <button type="button" id="togglePass" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-sm text-gray-500 hover:text-gray-800" aria-label="Показати пароль">Показати</button>
+            </div>
+            <div id="passErr" class="error">Мінімум 6 символів</div>
+          </div>
+
+          <button class="btn btn-primary w-full h-11" type="submit" id="submitBtn">
+            Увійти
+          </button>
+
+          <div id="formErr" class="error text-center"></div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script defer src="assets/js/banobox.js"></script>
+  <script>
+    // Утиліти
+    const $ = s=>document.querySelector(s);
+    const show = (el, on)=> el.style.display = on ? 'block' : 'none';
+    function toast(msg, ok=true){
+      const t = $('#toast');
+      t.textContent = msg;
+      t.style.background = ok ? '#16a34a' : '#ef4444';
+      t.classList.add('toast-show');
+      setTimeout(()=>t.classList.remove('toast-show'), 2200);
+    }
+    // Нормалізація 9 цифр (видаляємо все зайве)
+    const onlyDigits9 = v => (v||'').replace(/\D/g,'').slice(0,9);
+    // Легка маска відображення: XX XXX XX XX
+    function prettyPhone9(v){
+      const d = onlyDigits9(v);
+      return d.replace(/^(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2}).*$/, (_,a,b,c,d2)=>[a,b,c,d2].filter(Boolean).join(' ').trim());
+    }
+    const phoneInp = $('#phone');
+    phoneInp.addEventListener('input', (e)=>{
+      const caretEnd = e.target.selectionEnd;
+      const raw = e.target.value;
+      const pretty = prettyPhone9(raw);
+      e.target.value = pretty;
+    });
+
+    // Показ/приховати пароль
+    $('#togglePass').addEventListener('click', ()=>{
+      const inp = $('#password');
+      const on = inp.type === 'password';
+      inp.type = on ? 'text' : 'password';
+      $('#togglePass').textContent = on ? 'Сховати' : 'Показати';
+    });
+
+    // Сабміт
+    $('#loginForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const phone9 = onlyDigits9($('#phone').value);
+      const pass   = $('#password').value;
+
+      show($('#phoneErr'), phone9.length !== 9);
+      show($('#passErr'), pass.length < 6);
+      if (phone9.length !== 9 || pass.length < 6) return;
+
+      const btn = $('#submitBtn'); btn.disabled = true; btn.textContent = 'Вхід...';
+      $('#formErr').textContent = '';
+
+      try{
+        // ❗️ бек очікує "email" — передаємо туди 9 цифр
+        const r = await fetch('/api/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email: phone9, password: pass })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Помилка входу');
+
+        const me = await fetch('/api/me', { credentials:'include' }).then(x=>x.json());
+        if (me?.user) localStorage.setItem('banobox_user', JSON.stringify(me.user));
+
+        toast('Ви успішно увійшли!', true);
+        setTimeout(()=> location.href = 'profile.html', 300);
+      }catch(err){
+        $('#formErr').textContent = err.message;
+        toast(err.message, false);
+      }finally{
+        btn.disabled = false; btn.textContent = 'Увійти';
+      }
+    });
+  </script>
+</body>
+</html>

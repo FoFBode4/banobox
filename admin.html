@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Banobox — Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Ваші стилі за бажанням -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    /* Легкі компоненти без @apply (сумісно з CDN) */
+    .card{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.05)}
+    .card-header{padding:.75rem 1rem;border-bottom:1px solid #eef2f7;font-weight:600}
+    .card-body{padding:1rem}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;font-weight:600;transition:all .15s}
+    .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+    .btn-ghost{background:#f3f4f6}.btn-ghost:hover{background:#e5e7eb}
+    .btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
+    .input,.select,textarea.input{width:100%;border:1px solid #d1d5db;border-radius:.5rem;padding:.5rem .75rem}
+    .input:focus,.select:focus,textarea.input:focus{outline:none;box-shadow:0 0 0 2px rgba(37,99,235,.35);border-color:#93c5fd}
+    .table{width:100%;font-size:.9rem}
+    .th{padding:.5rem 0;color:#6b7280;text-transform:uppercase;font-size:.75rem;letter-spacing:.05em;text-align:left}
+    .td{padding:.5rem 0;vertical-align:top}
+    .row{border-bottom:1px solid #f1f5f9}
+    .pill{display:inline-flex;align-items:center;border:1px solid #e5e7eb;border-radius:999px;padding:.25rem .5rem;font-size:.75rem;color:#4b5563}
+    .toast{position:fixed;right:1rem;top:1rem;z-index:50;padding:.75rem 1rem;border-radius:.75rem;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+    .toast-success{background:#16a34a}.toast-error{background:#ef4444}.toast-info{background:#3b82f6}
+    .loader{position:fixed;inset:0;background:rgba(255,255,255,.7);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:40}
+    .tab-active{background:#eff6ff;border:1px solid #2563eb;color:#1d4ed8}
+
+    /* прев’ю зображень у фотоменеджері */
+    #uploader-previews img { transition: transform .15s ease; }
+    #uploader-previews img:hover { transform: scale(1.02); }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+  <!-- Глобальний лоадер -->
+  <div id="loader" class="loader">
+    <div class="flex items-center gap-3 text-gray-700">
+      <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 004 12z"></path>
+      </svg>
+      <span>Завантаження…</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 bg-blue-600 text-white rounded-lg grid place-items-center font-bold">B</div>
+        <div>
+          <div class="text-lg font-semibold">Banobox Admin</div>
+          <div class="text-xs text-gray-500">Керування каталогом</div>
+        </div>
+      </div>
+      <a href="index.html" class="btn btn-ghost">← На сайт</a>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="max-w-7xl mx-auto px-4 mt-6">
+    <div class="flex gap-2">
+      <button id="tab-cats" class="px-4 py-2 rounded-md border bg-white hover:bg-gray-50">Категорії</button>
+      <button id="tab-prods" class="px-4 py-2 rounded-md border bg-white hover:bg-gray-50">Товари</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <!-- Категорії -->
+    <section id="section-cats" class="space-y-6">
+      <!-- Категорії: форма + таблиця -->
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="card md:col-span-1">
+          <div class="card-header">Нова категорія</div>
+          <div class="card-body">
+            <form id="form-add-cat" class="space-y-3">
+              <input id="input-new-cat" class="input" type="text" placeholder="Назва категорії" />
+              <button type="submit" class="btn btn-primary w-full">Додати категорію</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card md:col-span-2">
+          <div class="card-header flex items-center justify-between">
+            <span>Список категорій</span>
+            <span class="pill" id="cats-count">0</span>
+          </div>
+          <div class="card-body overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr class="border-b border-gray-100">
+                  <th class="th">#</th>
+                  <th class="th">Назва</th>
+                  <th class="th">Дії</th>
+                </tr>
+              </thead>
+              <tbody id="cats-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Підкатегорії -->
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="card md:col-span-1">
+          <div class="card-header">Нова підкатегорія</div>
+          <div class="card-body">
+            <form id="form-add-subcat" class="space-y-3">
+              <select id="select-cat-for-subcat" class="select">
+                <option value="">– оберіть категорію –</option>
+              </select>
+              <input id="input-new-subcat" class="input" type="text" placeholder="Назва підкатегорії" />
+              <button type="submit" class="btn btn-primary w-full">Додати підкатегорію</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card md:col-span-2">
+          <div class="card-header flex items-center justify-between">
+            <span>Список підкатегорій</span>
+            <span class="pill" id="subs-count">0</span>
+          </div>
+          <div class="card-body overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr class="border-b border-gray-100">
+                  <th class="th">#</th>
+                  <th class="th">Категорія</th>
+                  <th class="th">Підкатегорія</th>
+                  <th class="th">Дії</th>
+                </tr>
+              </thead>
+              <tbody id="subs-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Доступність опцій -->
+      <div class="card">
+        <div class="card-header">Доступність опцій (Volumes / Colors)</div>
+        <div class="card-body space-y-4">
+          <div class="grid md:grid-cols-3 gap-3">
+            <select id="bind-cat" class="select">
+              <option value="">— Категорія —</option>
+            </select>
+            <select id="bind-sub" class="select">
+              <option value="">— Без підкатегорії —</option>
+            </select>
+            <div class="flex gap-2">
+              <button id="bind-load" class="btn btn-ghost w-full">Завантажити</button>
+              <button id="bind-save" class="btn btn-primary w-full">Зберегти</button>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="card">
+              <div class="card-header flex items-center justify-between">
+                <span>Об’єми</span>
+                <input id="vol-search" type="text" class="input max-w-[220px]" placeholder="Пошук…" />
+              </div>
+              <div class="card-body max-h-64 overflow-auto space-y-2" id="bind-volumes-wrap"></div>
+            </div>
+            <div class="card">
+              <div class="card-header flex items-center justify-between">
+                <span>Кольори</span>
+                <input id="col-search" type="text" class="input max-w-[220px]" placeholder="Пошук…" />
+              </div>
+              <div class="card-body max-h-64 overflow-auto space-y-2" id="bind-colors-wrap"></div>
+            </div>
+          </div>
+
+          <p class="text-xs text-gray-500">Якщо підкатегорію не обрано — збереження застосовується до всієї категорії.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Товари -->
+    <section id="section-prods" class="hidden space-y-6">
+      <div class="card">
+        <div class="card-header">Товар — створення / редагування</div>
+        <div class="card-body">
+          <form id="form-add-prod" class="grid md:grid-cols-3 gap-4">
+            <!-- Блок 1 -->
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs text-gray-600">POS</label>
+                <input name="pos" class="input" type="text" placeholder="POS" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-600">Назва</label>
+                <input name="title" class="input" type="text" placeholder="Назва" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-gray-600">Ціна</label>
+                  <input name="price" class="input" type="number" step="0.01" min="0" placeholder="0.00" />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-600">Знижка %</label>
+                  <input name="discount" class="input" type="number" min="0" max="99" placeholder="0" />
+                </div>
+              </div>
+              <div>
+                <label class="text-xs text-gray-600">Матеріал</label>
+                <select name="material_id" id="select-material" class="select"></select>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-gray-600">Діаметр</label>
+                  <input name="diameter" class="input" type="text" placeholder="напр. 18 мм" />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-600">Дозування</label>
+                  <input name="dosage" class="input" type="text" placeholder="за потреби" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Блок 2 -->
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-gray-600">Категорія</label>
+                  <select name="category_id" id="select-cat" class="select"></select>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-600">Підкатегорія</label>
+                  <select name="subcategory_id" id="select-subcat" class="select"></select>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-gray-600">Об’єм</label>
+                  <select name="volume_id" id="select-vol" class="select"></select>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-600">Колір</label>
+                  <select name="color_id" id="select-color" class="select"></select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Блок 3 -->
+            <div class="space-y-3 md:col-span-1">
+              <div class="space-y-2">
+                <label class="text-xs text-gray-600">Фото</label>
+
+                <!-- Поле-джерело істини -->
+                <input name="photos" class="input" type="text" placeholder="https://... , https://..." />
+
+                <!-- Міні-менеджер фото -->
+                <div id="uploader-drop" class="border-2 border-dashed border-gray-300 rounded-lg p-3 bg-white text-sm text-gray-600">
+                  Перетягніть зображення сюди або
+                  <button type="button" id="uploader-pick" class="btn btn-ghost ml-1">Обрати файли</button>
+                  <button type="button" id="uploader-add-url" class="btn btn-ghost ml-1">Додати за URL</button>
+                  <input id="uploader-file" type="file" class="hidden" multiple accept="image/*" />
+                  <div class="text-xs text-gray-400 mt-1">JPG/PNG/WebP; після завантаження з’являться прев’ю.</div>
+                </div>
+
+                <div id="uploader-previews" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+              </div>
+
+              <div>
+                <label class="text-xs text-gray-600">Опис</label>
+                <textarea name="description" class="input min-h-[120px]" placeholder="Короткий опис товару"></textarea>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button type="submit" class="btn btn-primary flex-1">Зберегти</button>
+                <button type="button" id="btn-reset-prod" class="btn btn-ghost">Скинути</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Таблиця товарів -->
+      <div class="card">
+        <div class="card-header flex items-center justify-between">
+          <span>Список товарів</span>
+          <div class="flex items-center gap-2">
+            <span id="prods-count" class="pill">0</span>
+            <button id="btn-reload-prods" class="btn btn-ghost">Оновити</button>
+          </div>
+        </div>
+        <div class="card-body overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="th">Фото</th>
+                <th class="th">ID</th>
+                <th class="th">POS</th>
+                <th class="th">Назва</th>
+                <th class="th">Ціна</th>
+                <th class="th">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="prods-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- JS -->
+  <script>
+    /* Helpers */
+    function showLoader(on){ document.getElementById('loader').style.display = on ? 'flex' : 'none'; }
+    function toast(msg,type='info'){
+      const t=document.getElementById('toast');
+      t.textContent=msg;
+      t.className='toast '+(type==='success'?'toast-success':type==='error'?'toast-error':'toast-info');
+      t.classList.remove('hidden');
+      setTimeout(()=>t.classList.add('hidden'),2200);
+    }
+    async function getJSON(url,opts){
+      const r=await fetch(url,opts); const txt=await r.text();
+      try{ return JSON.parse(txt); }catch(e){ console.error('Не JSON з',url,'\\nВідповідь:',txt); throw e; }
+    }
+    const numOrNull = v => (v==='' || v==null) ? null : Number(v);
+    const floatOrNull = v => {
+      if (v==='' || v==null) return null;
+      const x = parseFloat(v);
+      return Number.isFinite(x) ? x : null;
+    };
+    const trimOrNull = v => {
+      const s = (v ?? '').toString().trim();
+      return s ? s : null;
+    };
+
+    /* State */
+    let allCats=[], allSubs=[], allMaterials=[], allVols=[], allCols=[];
+    let editingId=null;
+
+    /* Tabs */
+    const tabCats=document.getElementById('tab-cats');
+    const tabProds=document.getElementById('tab-prods');
+    const sectionCats=document.getElementById('section-cats');
+    const sectionProds=document.getElementById('section-prods');
+
+    function activate(tab){
+      tabCats.classList.remove('tab-active'); tabProds.classList.remove('tab-active');
+      if(tab===tabCats){ tabCats.classList.add('tab-active'); sectionCats.classList.remove('hidden'); sectionProds.classList.add('hidden'); }
+      else{ tabProds.classList.add('tab-active'); sectionProds.classList.remove('hidden'); sectionCats.classList.add('hidden'); }
+    }
+    tabCats.addEventListener('click',()=>activate(tabCats));
+    tabProds.addEventListener('click',()=>{ activate(tabProds); loadProducts(); });
+
+    /* Refs */
+    const catsTable=document.getElementById('cats-table');
+    const catsCount=document.getElementById('cats-count');
+    const subsTable=document.getElementById('subs-table');
+    const subsCount=document.getElementById('subs-count');
+    const prodsTable=document.getElementById('prods-table');
+    const prodsCount=document.getElementById('prods-count');
+
+    const formAddCat=document.getElementById('form-add-cat');
+    const inputNewCat=document.getElementById('input-new-cat');
+
+    const formAddSubcat=document.getElementById('form-add-subcat');
+    const selectCatForSub=document.getElementById('select-cat-for-subcat');
+    const inputNewSubcat=document.getElementById('input-new-subcat');
+
+    const formAddProd=document.getElementById('form-add-prod');
+    const btnResetProd=document.getElementById('btn-reset-prod');
+    const btnReloadProds=document.getElementById('btn-reload-prods');
+
+    const selMaterial=document.getElementById('select-material');
+    const selCat=document.getElementById('select-cat');
+    const selSubcat=document.getElementById('select-subcat');
+    const selVol=document.getElementById('select-vol');
+    const selColor=document.getElementById('select-color');
+
+    const bindCat=document.getElementById('bind-cat');
+    const bindSub=document.getElementById('bind-sub');
+    const bindLoad=document.getElementById('bind-load');
+    const bindSave=document.getElementById('bind-save');
+    const bindVolumesWrap=document.getElementById('bind-volumes-wrap');
+    const bindColorsWrap=document.getElementById('bind-colors-wrap');
+    const volSearch = document.getElementById('vol-search');
+    const colSearch = document.getElementById('col-search');
+
+    /* Init */
+    document.addEventListener('DOMContentLoaded', async () => {
+      showLoader(true);
+      try{
+        await loadDictionaries();
+        await loadCategoriesTable();
+        fillCatForSub();
+        await loadSubcategoriesTable();
+        fillBindSelectors();
+        initFormBindings();
+        activate(tabCats);
+      } finally { showLoader(false); }
+    });
+
+    /* Dictionaries */
+    async function loadDictionaries(){
+      const {categories}=await getJSON('/api/categories'); allCats=categories||[];
+      const {subcategories}=await getJSON('/api/subcategories'); allSubs=subcategories||[];
+
+      const mats=await getJSON('/api/materials'); allMaterials=mats.materials||[];
+      selMaterial.innerHTML='<option value=\"\">—</option>'+allMaterials.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+
+      const vols=await getJSON('/api/volumes'); allVols=vols.volumes||[];
+      const cols=await getJSON('/api/colors'); allCols=cols.colors||[];
+
+      selCat.innerHTML='<option value=\"\">– оберіть –</option>'+allCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+      selSubcat.innerHTML='<option value=\"\">– Без підкатегорії –</option>';
+      selVol.innerHTML='<option value=\"\">– Без об’єму –</option>';
+      selColor.innerHTML='<option value=\"\">– Без кольору –</option>';
+    }
+
+    /* Categories table */
+    async function loadCategoriesTable(){
+      const {categories}=await getJSON('/api/categories');
+      catsTable.innerHTML=''; catsCount.textContent=categories?.length??0;
+
+      (categories||[]).forEach((c,i)=>{
+        const tr=document.createElement('tr'); tr.className='row';
+        tr.innerHTML=`
+          <td class="td w-12 text-gray-500">${i+1}</td>
+          <td class="td"><input data-id="${c.id}" class="input px-2 py-1" value="${c.name}" /></td>
+          <td class="td">
+            <div class="flex gap-2">
+              <button data-action="update" data-id="${c.id}" class="btn btn-ghost">Зберегти</button>
+              <button data-action="delete" data-id="${c.id}" class="btn btn-danger">Видалити</button>
+            </div>
+          </td>`;
+        catsTable.appendChild(tr);
+      });
+
+      catsTable.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const id=btn.dataset.id;
+          const name=btn.closest('tr').querySelector('input').value.trim();
+          if(btn.dataset.action==='update'){
+            const r=await fetch(`/api/categories/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+            if(r.ok){ toast('Категорію оновлено','success'); await loadDictionaries(); await loadCategoriesTable(); fillCatForSub(); fillBindSelectors(); }
+            else toast('Помилка оновлення','error');
+          }
+          if(btn.dataset.action==='delete'){
+            if(!confirm('Видалити категорію?')) return;
+            const r=await fetch(`/api/categories/${id}`,{method:'DELETE'});
+            if(r.ok){ toast('Категорію видалено','success'); await loadDictionaries(); await loadCategoriesTable(); fillCatForSub(); await loadSubcategoriesTable(); fillBindSelectors(); }
+            else toast('Помилка видалення','error');
+          }
+        });
+      });
+    }
+
+    formAddCat.addEventListener('submit', async e=>{
+      e.preventDefault();
+      const name=inputNewCat.value.trim(); if(!name) return;
+      showLoader(true);
+      const r=await fetch('/api/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+      showLoader(false);
+      if(!r.ok){ toast('Помилка створення категорії','error'); return; }
+      inputNewCat.value='';
+      toast('Категорію додано','success');
+      await loadDictionaries(); await loadCategoriesTable(); fillCatForSub(); await loadSubcategoriesTable(); fillBindSelectors();
+    });
+
+    /* Subcategories */
+    function fillCatForSub(){
+      selectCatForSub.innerHTML='<option value=\"\">– оберіть категорію –</option>'+allCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    async function loadSubcategoriesTable(){
+      const {subcategories}=await getJSON('/api/subcategories');
+      subsTable.innerHTML=''; subsCount.textContent=subcategories?.length??0;
+
+      (subcategories||[]).forEach((s,i)=>{
+        const catName=allCats.find(c=>c.id===s.category_id)?.name||'';
+        const tr=document.createElement('tr'); tr.className='row';
+        tr.innerHTML=`
+          <td class="td w-12 text-gray-500">${i+1}</td>
+          <td class="td text-gray-700">${catName}</td>
+          <td class="td"><input data-id="${s.id}" data-cat="${s.category_id}" class="input px-2 py-1" value="${s.name}" /></td>
+          <td class="td">
+            <div class="flex gap-2">
+              <button data-action="update" data-id="${s.id}" class="btn btn-ghost">Зберегти</button>
+              <button data-action="delete" data-id="${s.id}" class="btn btn-danger">Видалити</button>
+            </div>
+          </td>`;
+        subsTable.appendChild(tr);
+      });
+
+      subsTable.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const id=btn.dataset.id;
+          const input=btn.closest('tr').querySelector('input');
+          const name=input.value.trim();
+          const category_id=+input.dataset.cat;
+
+          if(btn.dataset.action==='update'){
+            const r=await fetch(`/api/subcategories/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,category_id})});
+            if(r.ok){ toast('Підкатегорію оновлено','success'); await loadSubcategoriesTable(); }
+            else toast('Помилка оновлення','error');
+          }
+          if(btn.dataset.action==='delete'){
+            if(!confirm('Видалити підкатегорію?')) return;
+            const r=await fetch(`/api/subcategories/${id}`,{method:'DELETE'});
+            if(r.ok){ toast('Підкатегорію видалено','success'); await loadDictionaries(); await loadSubcategoriesTable(); fillBindSelectors(); }
+            else toast('Помилка видалення','error');
+          }
+        });
+      });
+    }
+
+    formAddSubcat.addEventListener('submit', async e=>{
+      e.preventDefault();
+      const name=inputNewSubcat.value.trim();
+      const category_id=Number(selectCatForSub.value);
+      if(!name||!category_id){ toast('Оберіть категорію та введіть назву','error'); return; }
+      showLoader(true);
+      const r=await fetch('/api/subcategories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,category_id})});
+      showLoader(false);
+      if(!r.ok){ toast('Помилка створення підкатегорії','error'); return; }
+      inputNewSubcat.value='';
+      toast('Підкатегорію додано','success');
+      await loadDictionaries(); await loadSubcategoriesTable(); fillBindSelectors();
+    });
+
+    /* Allowed options — searchable checklists */
+    let allowedVolSet = new Set();
+    let allowedColSet = new Set();
+
+    function fillBindSelectors(){
+      bindCat.innerHTML='<option value=\"\">— Категорія —</option>'+allCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+      bindSub.innerHTML='<option value=\"\">— Без підкатегорії —</option>';
+      bindCat.onchange=()=>{
+        const cid=+bindCat.value;
+        const subs=allSubs.filter(s=>s.category_id===cid);
+        bindSub.innerHTML='<option value=\"\">— Без підкатегорії —</option>'+subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+      };
+      bindVolumesWrap.innerHTML=''; bindColorsWrap.innerHTML='';
+      volSearch.value=''; colSearch.value='';
+    }
+
+    function renderVolumesList(query=''){
+      const q = query.trim().toLowerCase();
+      bindVolumesWrap.innerHTML='';
+      allVols
+        .filter(v => !q || String(v.ml).toLowerCase().includes(q))
+        .forEach(v=>{
+          const row=document.createElement('label');
+          row.className='flex items-center gap-3 p-2 rounded hover:bg-gray-50 border border-transparent';
+          row.innerHTML=`<input type="checkbox" class="h-4 w-4" value="${v.id}" ${allowedVolSet.has(v.id)?'checked':''} /> <span>${v.ml} мл</span>`;
+          row.querySelector('input').addEventListener('change', (e)=>{
+            if (e.target.checked) allowedVolSet.add(v.id); else allowedVolSet.delete(v.id);
+          });
+          bindVolumesWrap.appendChild(row);
+        });
+    }
+    function renderColorsList(query=''){
+      const q = query.trim().toLowerCase();
+      bindColorsWrap.innerHTML='';
+      allCols
+        .filter(c => !q || (c.color_name||'').toLowerCase().includes(q))
+        .forEach(c=>{
+          const row=document.createElement('label');
+          row.className='flex items-center gap-3 p-2 rounded hover:bg-gray-50 border border-transparent';
+          row.innerHTML=`<input type="checkbox" class="h-4 w-4" value="${c.id}" ${allowedColSet.has(c.id)?'checked':''} /> <span>${c.color_name}</span>`;
+          row.querySelector('input').addEventListener('change', (e)=>{
+            if (e.target.checked) allowedColSet.add(c.id); else allowedColSet.delete(c.id);
+          });
+          bindColorsWrap.appendChild(row);
+        });
+    }
+
+    volSearch.addEventListener('input',()=>renderVolumesList(volSearch.value));
+    colSearch.addEventListener('input',()=>renderColorsList(colSearch.value));
+
+    bindLoad.addEventListener('click', async ()=>{
+      const cid=bindCat.value, sid=bindSub.value;
+      const params=new URLSearchParams(); if(cid) params.set('category_id',cid); if(sid) params.set('subcategory_id',sid);
+      const al=await getJSON('/api/allowed-options?'+params.toString());
+      allowedVolSet = new Set((al.volumes||[]).map(v=>v.id));
+      allowedColSet = new Set((al.colors ||[]).map(c=>c.id));
+      renderVolumesList();
+      renderColorsList();
+      toast('Опції завантажено','success');
+    });
+
+    bindSave.addEventListener('click', async ()=>{
+      const cid=bindCat.value, sid=bindSub.value;
+      if(!cid && !sid){ toast('Оберіть категорію (можна без підкатегорії)','error'); return; }
+      const volume_ids=Array.from(allowedVolSet);
+      const color_ids =Array.from(allowedColSet);
+      const url=sid?(`/api/subcategories/${sid}/allowed`):(`/api/categories/${cid}/allowed`);
+      const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume_ids,color_ids})});
+      if(r.ok) toast('Збережено','success'); else toast('Помилка збереження','error');
+    });
+
+    /* Product form bindings */
+    function initFormBindings(){
+      selCat.addEventListener('change', async ()=>{
+        const cid=+selCat.value;
+        const subs=allSubs.filter(s=>s.category_id===cid);
+        selSubcat.innerHTML='<option value=\"\">– Без підкатегорії –</option>'+subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+        await reloadAllowedForProduct();
+      });
+      selSubcat.addEventListener('change', reloadAllowedForProduct);
+      btnResetProd.addEventListener('click',()=>{ editingId=null; formAddProd.reset(); setPhotos([]); });
+    }
+
+    async function reloadAllowedForProduct(){
+      const cid=selCat.value||''; const sid=selSubcat.value||'';
+      const url=new URL('/api/allowed-options',location.origin);
+      if(cid) url.searchParams.set('category_id',cid);
+      if(sid) url.searchParams.set('subcategory_id',sid);
+      const {volumes,colors}=await getJSON(url.toString());
+      selVol.innerHTML ='<option value=\"\">– Без об’єму –</option>'+(volumes||[]).map(v=>`<option value="${v.id}">${v.ml} мл</option>`).join('');
+      selColor.innerHTML='<option value=\"\">– Без кольору –</option>'+(colors ||[]).map(c=>`<option value="${c.id}">${c.color_name}</option>`).join('');
+    }
+
+    /* Products table + CRUD (з прев’ю) */
+    async function loadProducts(){
+      const {products}=await getJSON('/api/products');
+      prodsTable.innerHTML=''; prodsCount.textContent=products?.length??0;
+      (products||[]).forEach(p=>{
+        const thumb = (Array.isArray(p.photos) && p.photos[0]) ? p.photos[0] : (p.photos || [])[0] || '/assets/img/placeholder.png';
+        const tr=document.createElement('tr'); tr.className='row';
+        tr.innerHTML=`
+          <td class="td w-16">
+            <img src="${thumb}" alt="" class="h-12 w-12 object-cover rounded-md border" />
+          </td>
+          <td class="td w-16 text-gray-500">${p.id}</td>
+          <td class="td">${p.pos}</td>
+          <td class="td">${p.title}</td>
+          <td class="td">₴${Number(p.price||0).toFixed(2)}</td>
+          <td class="td">
+            <div class="flex gap-2">
+              <button data-action="edit" data-id="${p.id}" class="btn btn-ghost">Редагувати</button>
+              <button data-action="delete" data-id="${p.id}" class="btn btn-danger">Видалити</button>
+            </div>
+          </td>`;
+        prodsTable.appendChild(tr);
+      });
+      prodsTable.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const id=btn.dataset.id;
+          if(btn.dataset.action==='edit') onEditProduct(id);
+          if(btn.dataset.action==='delete') onDeleteProduct(id);
+        });
+      });
+    }
+    btnReloadProds.addEventListener('click', loadProducts);
+
+    async function onEditProduct(id){
+      const r=await fetch(`/api/products/${id}`);
+      if(!r.ok){ toast('Товар не знайдено','error'); return; }
+      const {product}=await r.json(); editingId=product.id;
+
+      formAddProd.pos.value=product.pos||'';
+      formAddProd.title.value=product.title||'';
+      formAddProd.price.value=product.price||'';
+      formAddProd.discount.value=product.discount||0;
+      selMaterial.value=product.material_id||'';
+      formAddProd.diameter.value=product.diameter||'';
+      formAddProd.dosage.value=product.dosage||'';
+
+      selCat.value=product.category_id||'';
+      const subs=allSubs.filter(s=>s.category_id===(product.category_id||0));
+      selSubcat.innerHTML='<option value=\"\">– Без підкатегорії –</option>'+subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+      selSubcat.value=product.subcategory_id||'';
+
+      await reloadAllowedForProduct();
+      selVol.value=product.volume_id||'';
+      selColor.value=product.color_id||'';
+
+      formAddProd.description.value=product.description||'';
+      formAddProd.photos.value=(product.photos||[]).join(', ');
+      setPhotos(Array.isArray(product.photos)?product.photos:[]);
+      toast('Редагування товару','info');
+    }
+
+    async function onDeleteProduct(id){
+      if(!confirm('Видалити товар?')) return;
+      const r=await fetch(`/api/products/${id}`,{method:'DELETE'});
+      if(r.ok){ toast('Товар видалено','success'); await loadProducts(); }
+      else {
+        const txt = await r.text();
+        console.error('DELETE /api/products error:', txt);
+        toast('Помилка видалення','error');
+      }
+    }
+
+    formAddProd.addEventListener('submit', async e=>{
+      e.preventDefault();
+
+      // Валідація мінімуму
+      const pos = trimOrNull(formAddProd.pos.value);
+      const title = trimOrNull(formAddProd.title.value);
+      const price = floatOrNull(formAddProd.price.value);
+      if (!pos || !title || price==null || price<0){
+        toast('Перевірте: POS, Назва, Ціна','error');
+        return;
+      }
+
+      // Збір даних з нормалізацією
+      const data = {
+        pos,
+        title,
+        price,
+        discount: numOrNull(formAddProd.discount.value) ?? 0,
+        material_id: numOrNull(selMaterial.value),
+        diameter: trimOrNull(formAddProd.diameter.value),
+        dosage: trimOrNull(formAddProd.dosage.value),
+
+        category_id: numOrNull(selCat.value),
+        subcategory_id: numOrNull(selSubcat.value),
+        volume_id: numOrNull(selVol.value),
+        color_id: numOrNull(selColor.value),
+
+        description: trimOrNull(formAddProd.description.value),
+        photos: (formAddProd.photos.value||'').split(',').map(s=>s.trim()).filter(Boolean)
+      };
+
+      const method=editingId?'PUT':'POST';
+      const url=editingId?(`/api/products/${editingId}`):('/api/products');
+
+      showLoader(true);
+      try{
+        const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        const txt = await r.text();
+        showLoader(false);
+        if(!r.ok){
+          // Спробуємо витягнути помилку з JSON, якщо бекенд повертає {error: "..."}
+          let msg = 'Помилка збереження товару';
+          try { const j=JSON.parse(txt); if (j.error) msg = j.error; } catch {}
+          console.error('Save product error:', txt);
+          toast(msg,'error');
+          return;
+        }
+        editingId=null; formAddProd.reset(); setPhotos([]);
+        toast('Товар збережено','success'); await loadProducts();
+      } catch(err){
+        showLoader(false);
+        console.error(err);
+        toast('Помилка збереження товару','error');
+      }
+    });
+
+    /* ───────────── ФОТОМЕНЕДЖЕР (працює з полем name="photos") ───────────── */
+    const photosField   = formAddProd.querySelector('input[name="photos"]');
+    const dropArea      = document.getElementById('uploader-drop');
+    const pickBtn       = document.getElementById('uploader-pick');
+    const addUrlBtn     = document.getElementById('uploader-add-url');
+    const fileInput     = document.getElementById('uploader-file');
+    const previewsWrap  = document.getElementById('uploader-previews');
+
+    let photoUrls = [];
+
+    function syncPhotosField(){ photosField.value = photoUrls.join(', '); }
+    function setPhotos(urls){ photoUrls = (urls||[]).slice(); renderPreviews(); syncPhotosField(); }
+
+    function renderPreviews(){
+      previewsWrap.innerHTML = '';
+      photoUrls.forEach(url => {
+        const card = document.createElement('div');
+        card.className = 'relative bg-white border rounded-lg overflow-hidden shadow-sm';
+        card.innerHTML = `
+          <img src="${url}" class="w-full h-28 object-cover" alt="">
+          <button type="button"
+                  class="absolute top-1 right-1 bg-white/90 hover:bg-white text-gray-700 rounded-full h-6 w-6 grid place-items-center text-sm">×</button>`;
+        card.querySelector('button').addEventListener('click', () => {
+          const idx = photoUrls.indexOf(url);
+          if (idx > -1) photoUrls.splice(idx,1);
+          syncPhotosField();
+          card.remove();
+        });
+        previewsWrap.appendChild(card);
+      });
+    }
+
+    async function uploadOne(file){
+      // Якщо на бекенді є /api/upload, що повертає {url:"/uploads/..."} — заливаємо туди.
+      const fd = new FormData(); fd.append('file', file);
+      const r = await fetch('/api/upload', { method:'POST', body: fd });
+      if (!r.ok) throw new Error('Upload failed');
+      const j = await r.json();
+      return j.url || (j.urls && j.urls[0]); // очікуємо {url: "..."}
+    }
+
+    async function handleFiles(fileList){
+      const files = Array.from(fileList||[]);
+      if (!files.length) return;
+      for (const f of files){
+        try{
+          const url = await uploadOne(f);
+          if (!url) throw new Error('No URL in response');
+          photoUrls.push(url);
+        }catch(e){
+          console.error(e);
+          toast('Помилка завантаження файлу','error');
+        }
+      }
+      renderPreviews(); syncPhotosField();
+    }
+
+    pickBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => { await handleFiles(fileInput.files); fileInput.value=''; });
+
+    addUrlBtn.addEventListener('click', () => {
+      const val = prompt('Вставте один або кілька URL (через кому):','');
+      if (!val) return;
+      val.split(',').map(s=>s.trim()).filter(Boolean).forEach(u => photoUrls.push(u));
+      renderPreviews(); syncPhotosField();
+    });
+
+    ['dragenter','dragover'].forEach(ev => {
+      dropArea.addEventListener(ev, e => { e.preventDefault(); dropArea.classList.add('ring','ring-blue-200','bg-blue-50'); });
+    });
+    ['dragleave','drop'].forEach(ev => {
+      dropArea.addEventListener(ev, e => { e.preventDefault(); dropArea.classList.remove('ring','ring-blue-200','bg-blue-50'); });
+    });
+    dropArea.addEventListener('drop', async e => { await handleFiles(e.dataTransfer.files); });
+
+  </script>
+</body>
+</html>

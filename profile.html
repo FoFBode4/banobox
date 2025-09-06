@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Banobox — Профіль</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .card{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.05)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;font-weight:600;transition:all .15s}
+    .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+    .btn-ghost{background:#f3f4f6}.btn-ghost:hover{background:#e5e7eb}
+    .badge{font-size:.75rem;border-radius:999px;padding:.15rem .5rem;display:inline-flex;align-items:center}
+    .badge.green{background:#dcfce7;color:#166534}
+    .badge.gray{background:#f3f4f6;color:#374151}
+    .toast{position:fixed;right:1rem;top:1rem;z-index:50;padding:.75rem 1rem;border-radius:.75rem;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+    .toast-success{background:#16a34a}.toast-error{background:#ef4444}.toast-info{background:#3b82f6}
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Header -->
+  <header class="bg-white border-b sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="text-xl font-semibold text-blue-600">Banobox</a>
+      <nav class="flex items-center gap-4">
+        <a href="index.html#products" class="text-sm text-gray-600 hover:text-gray-900">Каталог</a>
+        <a href="orders.html" class="text-sm text-gray-600 hover:text-gray-900">Історія замовлень</a>
+        <a href="cart.html" class="relative flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+          </svg>
+          <span>Кошик</span>
+          <span class="cart-count absolute -right-2 -top-2 bg-red-500 text-white text-xs rounded-full px-1">0</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold mb-6">Профіль</h1>
+
+    <!-- Якщо не авторизований -->
+    <div id="not-auth" class="card p-6 hidden">
+      <p class="mb-3">Здається, ви ще не увійшли.</p>
+      <div class="flex gap-2">
+        <a href="login.html" class="btn btn-primary">Увійти</a>
+        <a href="register.html" class="btn btn-ghost">Зареєструватися</a>
+      </div>
+    </div>
+
+    <!-- Профіль -->
+    <div id="profile-card" class="card p-6 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-sm text-gray-500">Статус</div>
+          <div id="status-badge" class="badge gray">Гість</div>
+        </div>
+        <button id="btn-logout" class="btn btn-ghost">Вийти</button>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Ім’я</div>
+          <div id="pf-name" class="text-lg font-medium">—</div>
+        </div>
+        <div>
+          <!-- Динамічний підпис: Телефон або Email -->
+          <div id="pf-contact-label" class="text-xs text-gray-500 mb-1">Контакт</div>
+          <div id="pf-contact" class="text-lg font-medium">—</div>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <a href="orders.html" class="btn btn-primary">Історія замовлень</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="py-8 text-center text-xs text-gray-500">
+    &copy; 2025 Banobox
+  </footer>
+
+  <script defer src="assets/js/banobox.js"></script>
+  <script>
+    /* ── утиліти ───────────────────────────────────────── */
+    function toast(msg,type='info'){
+      const t=document.getElementById('toast');
+      t.textContent=msg;
+      t.className='toast '+(type==='success'?'toast-success':type==='error'?'toast-error':'toast-info');
+      t.classList.remove('hidden');
+      setTimeout(()=>t.classList.add('hidden'),2000);
+    }
+    const getLocalUser = () => { try{ return JSON.parse(localStorage.getItem('banobox_user')||'{}'); }catch{ return {}; } };
+    const setLocalUser = (u) => localStorage.setItem('banobox_user', JSON.stringify(u||{}));
+    const isRegistered = (u) => !!(u && (u.id || u.user_id || u.email || u.phone));
+
+    // Форматування українського мобільного: беремо 9 цифр і віддаємо +380 XX XXX XX XX
+    function formatUA9(phone9){
+      const d = String(phone9||'').replace(/\D/g,'').slice(0,9);
+      if (d.length !== 9) return null;
+      return '+380 ' + d.replace(/^(\d{2})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4');
+    }
+
+    async function fetchMe(){
+      const endpoints = ['/api/me','/api/profile','/api/user/me','/api/auth/me','/api/users/me','/api/account/me'];
+      for (const url of endpoints){
+        try{
+          const r = await fetch(url, {credentials:'include', headers:{'Accept':'application/json'}});
+          if(!r.ok) continue;
+          const data = await r.json();
+          const u = data.user || data.profile || data.data || data;
+          if (u && (u.name || u.email || u.id || u.phone)) return u;
+        }catch{}
+      }
+      return null;
+    }
+
+    function hydrateUI(u){
+      const card   = document.getElementById('profile-card');
+      const notAuth= document.getElementById('not-auth');
+      const nameEl = document.getElementById('pf-name');
+      const contactLabel = document.getElementById('pf-contact-label');
+      const contactEl    = document.getElementById('pf-contact');
+      const badge = document.getElementById('status-badge');
+
+      if (!isRegistered(u)){
+        notAuth.classList.remove('hidden');
+        card.classList.add('hidden');
+        return;
+      }
+      notAuth.classList.add('hidden');
+      card.classList.remove('hidden');
+
+      nameEl.textContent = u.name || '—';
+
+      // Визначаємо, що показувати як контакт:
+      // якщо "email" складається з 9 цифр — це телефон; інакше — звичайний email.
+      let phone9 = null;
+      if (/^\d{9}$/.test(String(u.phone||''))) phone9 = String(u.phone);
+      else if (/^\d{9}$/.test(String(u.email||''))) phone9 = String(u.email);
+
+      if (phone9){
+        contactLabel.textContent = 'Телефон';
+        contactEl.textContent = formatUA9(phone9) || '—';
+      } else {
+        contactLabel.textContent = 'Email';
+        contactEl.textContent = u.email || '—';
+      }
+
+      badge.textContent = 'Зареєстрований';
+      badge.className = 'badge green';
+      if (window.updateCartCount) window.updateCartCount();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1) localStorage
+      let user = getLocalUser();
+
+      // 2) підтвердимо з API
+      const fromApi = await fetchMe();
+      if (fromApi){
+        user = Object.assign({}, user, fromApi);
+        setLocalUser(user);
+      }
+
+      hydrateUI(user);
+
+      // logout
+      document.getElementById('btn-logout').addEventListener('click', async () => {
+        try{ await fetch('/api/logout', {method:'POST', credentials:'include'}); }catch{}
+        localStorage.removeItem('banobox_user');
+        toast('Ви вийшли з профілю','success');
+        setTimeout(()=>location.reload(), 600);
+      });
+    });
+  </script>
+</body>
+</html>

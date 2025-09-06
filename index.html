@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="uk" x-data class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banobox — Каталог</title>
+
+  <!-- AOS (анімації) -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Стилі проєкту -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <!-- Локальні стилі (додані ефекти та пейджер модалки) -->
+  <style>
+    /* ── HERO blobs: м'які повільні рухи ───────────────────── */
+    @keyframes hero-blob-move {
+      0% {transform: translate(0,0) scale(1);}
+      33% {transform: translate(20px,-30px) scale(1.06);}
+      66% {transform: translate(-30px,10px) scale(0.98);}
+      100% {transform: translate(0,0) scale(1);}
+    }
+    .hero-blob {animation: hero-blob-move 22s ease-in-out infinite; will-change: transform;}
+    .hero-blob-2 {animation: hero-blob-move 26s ease-in-out infinite reverse; will-change: transform;}
+
+    /* ── Галерея модалки: пейджер ──────────────────────────── */
+    .modal-pager #modal-dots .dot{
+      width:10px;height:10px;border-radius:9999px;
+      background:rgba(17,24,39,.18);
+      border:1px solid rgba(255,255,255,.65);
+      backdrop-filter:blur(2px);
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.12);
+      transform:scale(1);
+      transition:transform .2s,background-color .2s,box-shadow .2s;
+    }
+    .modal-pager #modal-dots .dot:hover{ transform:scale(1.15); }
+    .modal-pager #modal-dots .dot.active{
+      background:#2563eb; /* електро-кобальт */
+      box-shadow:0 0 0 3px rgba(37,99,235,.18);
+    }
+
+    /* ── Варіанти (мініатюри кольорів) ─────────────────────── */
+    .variant-list{ gap:.5rem; }
+    .variant-thumb{
+      width:44px;height:44px;border-radius:.5rem;overflow:hidden;
+      border:1px solid rgba(0,0,0,.08);background:#fff;
+      box-shadow:0 1px 2px rgba(0,0,0,.06);
+      transition:transform .15s, box-shadow .15s, border-color .15s;
+    }
+    .variant-thumb img{ width:100%;height:100%;object-fit:cover; }
+    .variant-thumb:hover{ transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12); }
+    .variant-thumb.selected{ border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.2); }
+
+    /* Галочка “додано” з плавністю */
+    .modal-add-check{ transition:opacity .2s ease; }
+  </style>
+</head>
+
+<body class="bg-gradient-to-b from-blue-50 via-gray-50 to-gray-100 text-gray-800" x-init="AOS.init()">
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-white/20 shadow-sm fixed w-full z-50">
+    <div class="container mx-auto flex justify-between items-center p-4">
+      <!-- Логотип -->
+      <a href="index.html" class="text-2xl font-bold text-blue-600">Banobox</a>
+
+      <!-- Десктопна навігація -->
+      <nav class="hidden md:flex space-x-6 items-center">
+        <!-- Товари -->
+        <button onclick="location.href='#products'" class="flex items-center hover:text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M3 4h18M3 12h18M3 20h18"/>
+          </svg>
+          <span class="ml-1">Товари</span>
+        </button>
+
+        <!-- Кошик -->
+        <button onclick="location.href='cart.html'" class="relative flex items-center hover:text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+          </svg>
+          <span class="cart-count absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">0</span>
+          <span class="ml-1">Кошик</span>
+        </button>
+
+        <!-- Профіль -->
+        <button id="profile-btn" onclick="location.href='profile.html'" class="flex items-center hover:text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M5.121 17.804A13.945 13.945 0 0112 15c2.5 0 4.847.695 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="ml-1">Профіль</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="relative pt-28 pb-24 text-white overflow-hidden" data-aos="fade-down">
+    <!-- Фон-градієнт -->
+    <div aria-hidden="true" class="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-sky-600"></div>
+
+    <!-- Напівпрозорі «плями» зі склом та анімацією -->
+    <span aria-hidden="true" class="hero-blob absolute -top-24 -right-24 w-[28rem] h-[28rem] rounded-full blur-3xl bg-cyan-300/30"></span>
+    <span aria-hidden="true" class="hero-blob-2 absolute -bottom-24 -left-24 w-[24rem] h-[24rem] rounded-full blur-3xl bg-blue-300/25"></span>
+
+    <!-- Контент -->
+    <div class="relative z-10 container mx-auto px-6 text-center">
+      <!-- Бейдж -->
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full mb-5"
+           data-aos="zoom-in" data-aos-delay="50">
+        <span class="text-sm/none">Новинки сезону</span>
+        <span class="w-1 h-1 rounded-full bg-white/70"></span>
+        <span class="text-sm/none opacity-90">PET • PP • HDPE • Алюміній</span>
+      </div>
+
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 drop-shadow">
+        Широкий вибір упаковки
+      </h1>
+      <p class="text-lg md:text-xl opacity-90 max-w-3xl mx-auto mb-8">
+        Від пластикових флаконів до алюмінієвих баночок — обирайте об’єм, колір і комплектуючі під ваш бренд.
+      </p>
+
+      <!-- Кнопки -->
+      <div class="flex items-center justify-center gap-3" data-aos="fade-up" data-aos-delay="100">
+        <a href="#products"
+           class="px-6 py-3 rounded-full bg-white text-blue-700 font-semibold shadow hover:shadow-md transition-transform duration-200 hover:-translate-y-0.5">
+          Переглянути каталог
+        </a>
+        <a href="#products"
+           class="px-6 py-3 rounded-full bg-white/15 text-white border border-white/30 backdrop-blur-md hover:bg-white/25 transition-all duration-200">
+          Подивитися новинки
+        </a>
+      </div>
+
+      <!-- Міні-переваги -->
+      <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 justify-center text-sm/6 opacity-90"
+          data-aos="fade-up" data-aos-delay="150">
+        <li>2000+ позицій</li>
+        <li class="hidden sm:block">•</li>
+        <li>Швидка відправка</li>
+        <li class="hidden sm:block">•</li>
+        <li>Опт і роздріб</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Навігація по категоріях -->
+  <nav id="main-categories" data-aos="fade-up"
+       class="flex flex-wrap gap-2 p-3 bg-white/70 backdrop-blur-md border border-white/30 shadow-sm sticky top-16 z-40 rounded-lg container mx-auto"></nav>
+  <div id="subcat-popup"
+       class="absolute bg-white/90 backdrop-blur-md shadow-lg p-2 rounded-lg hidden border border-white/30"></div>
+
+  <!-- Products Grid -->
+  <main id="products" class="pt-4 container mx-auto p-4">
+    <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+  </main>
+
+  <!-- Detail Modal (закриття: клік по фону або Esc) -->
+  <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white/95 backdrop-blur-md rounded-2xl w-11/12 md:w-1/2 p-6 relative shadow-lg transition-transform duration-200 ease-out">
+      <!-- Галерея фото -->
+      <div id="modal-gallery" class="overflow-hidden relative">
+        <img class="modal-img w-full h-64 object-contain rounded mb-2 bg-gray-100" src="" alt="" />
+        <button id="modal-prev"
+                class="absolute left-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/60 rounded-full p-2">‹</button>
+        <button id="modal-next"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-white bg-gray-800/60 rounded-full p-2">›</button>
+
+        <!-- Пейджер під фото -->
+        <div class="modal-pager mt-1 flex items-center justify-center gap-3 select-none">
+          <div id="modal-dots" class="flex items-center gap-2"></div>
+          <div class="text-[11px] text-gray-500"><span id="modal-counter">1 / 1</span></div>
+        </div>
+      </div>
+
+      <h2 class="modal-title text-2xl font-bold mb-1"></h2>
+      <p class="modal-pos text-gray-500 mb-2"></p>
+      <p class="modal-discount text-red-600 font-semibold mb-1 hidden"></p>
+      <p class="modal-price text-xl text-green-600 mb-1"></p>
+      <p class="modal-old-price text-gray-400 line-through mb-2 hidden"></p>
+
+      <!-- Варіанти (мініатюри інших кольорів/версій) -->
+      <div class="modal-variants flex flex-wrap mb-4"></div>
+
+      <!-- Характеристики (іконки + значення) -->
+      <ul class="mb-3 text-sm flex flex-wrap gap-2">
+        <!-- Матеріал -->
+        <li class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur border border-white/30 text-gray-800 shadow-sm">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 3v5l-5 9a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 17l-5-9V3"/>
+            <path d="M8 3h8"/>
+            <path d="M8 14c1.3-.9 2.7.6 4 0s2.7-1 4 0"/>
+          </svg>
+          <span class="modal-material"></span>
+          <span class="sr-only">Матеріал</span>
+        </li>
+
+        <!-- Діаметр -->
+        <li class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur border border-white/30 text-gray-800 shadow-sm">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="6"/>
+            <path d="M8 12h8"/>
+            <path d="M8 12l-2 2M8 12l-2 -2"/>
+            <path d="M16 12l2 2M16 12l2 -2"/>
+          </svg>
+          <span class="modal-diameter"></span>
+          <span class="sr-only">Діаметр</span>
+        </li>
+
+        <!-- Колір -->
+        <li class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur border border-white/30 text-gray-800 shadow-sm">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4a7 7 0 1 0 0 14h2.2a2.8 2.8 0 0 0 0-5.6H14"/>
+            <circle cx="8.5" cy="10" r="1.3"/>
+            <circle cx="12.5" cy="8" r="1.3"/>
+            <circle cx="14.5" cy="13.5" r="1.3"/>
+          </svg>
+          <span class="modal-color"></span>
+          <span class="sr-only">Колір</span>
+        </li>
+
+        <!-- Об’єм -->
+        <li class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur border border-white/30 text-gray-800 shadow-sm">
+          <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 5h10v10a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4V5z"/>
+            <path d="M14 8h3M14 11h3"/>
+          </svg>
+          <span class="modal-volume"></span>
+          <span class="sr-only">Об’єм</span>
+        </li>
+      </ul>
+
+      <!-- Опис -->
+      <p class="modal-desc mb-4">Опис відсутній</p>
+
+      <!-- Додати до кошика -->
+      <div class="flex items-center gap-3 mb-2">
+        <button class="modal-qty-minus p-2 bg-gray-200 rounded">−</button>
+        <input type="number" class="modal-qty w-16 text-center border rounded" value="1" min="1" />
+        <button class="modal-qty-plus p-2 bg-gray-200 rounded">＋</button>
+        <button class="modal-add-btn btn-primary ml-auto">Додати до кошика</button>
+        <span class="modal-add-check ml-2 text-green-600 text-xl opacity-0">✓</span>
+      </div>
+
+      <!-- Рекомендації -->
+      <div class="modal-recommendations hidden mt-6">
+        <h3 class="text-lg font-semibold mb-2">Рекомендовані товари</h3>
+        <div class="rec-list flex gap-4 overflow-x-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white py-6 text-center text-sm text-gray-600">
+    &copy; 2025 Banobox. Всі права захищені.
+  </footer>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="fixed bottom-0 inset-x-0 bg-white shadow-inner flex justify-around items-center py-2 md:hidden z-50">
+    <button onclick="location.href='#products'" class="flex flex-col items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path d="M3 4h18M3 12h18M3 20h18"/>
+      </svg>
+      <span class="text-xs mt-1">Товари</span>
+    </button>
+    <button onclick="location.href='cart.html'" class="relative flex flex-col items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+      </svg>
+      <span class="cart-count absolute top-0 right-6 bg-red-500 text-white text-xs rounded-full px-1">0</span>
+      <span class="text-xs mt-1">Кошик</span>
+    </button>
+    <button onclick="location.href='profile.html'" class="flex flex-col items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path d="M5.121 17.804A13.945 13.945 0 0112 15c2.5 0 4.847.695 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span class="text-xs mt-1">Профіль</span>
+    </button>
+  </nav>
+
+  <!-- Ім'я в кнопці профілю (якщо збережений користувач) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const userJson = localStorage.getItem('banobox_user');
+      if (userJson) {
+        try {
+          const user = JSON.parse(userJson);
+          const btn = document.getElementById('profile-btn');
+          if (btn) btn.querySelector('span').textContent = user.name || 'Профіль';
+        } catch {}
+      }
+    });
+  </script>
+
+  <!-- Логіка каталогу/кошика -->
+  <script defer src="assets/js/banobox.js"></script>
+  <!-- Додаткові взаємодії -->
+  <script defer src="assets/js/enhanced_interactions.js"></script>
+
+  <!-- Локальні сценарії сторінки: категорії + модалка/галерея -->
+  <script>
+  /* ──────────────────────────────────────────────────────────
+     КАТЕГОРІЇ / ПІДКАТЕГОРІЇ: навігація + фільтрація товарів
+     ────────────────────────────────────────────────────────── */
+async function renderCategoriesNav() {
+  if (window.__catsRendered) return;   // 👈 якщо вже намальовано — виходимо
+  window.__catsRendered = true;        // помітка "намальовано"
+
+  const nav = document.getElementById('main-categories');
+  const popup = document.getElementById('subcat-popup');
+  if (!nav || !popup) return;
+
+  nav.innerHTML = '';
+    popup.classList.add('hidden');
+
+    let hideTimer = null;
+    let anchorBtn = null;
+
+    function hidePopupSoon(delay = 120) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => popup.classList.add('hidden'), delay);
+    }
+    function cancelHide() { clearTimeout(hideTimer); }
+
+    function showPopupFor(anchor, subcats) {
+      if (!subcats || !subcats.length) { popup.classList.add('hidden'); return; }
+      anchorBtn = anchor;
+
+      popup.innerHTML = subcats.map(sc =>
+        `<button class="block w-full text-left px-3 py-2 hover:bg-gray-100" data-subid="${sc.id}">${sc.name}</button>`
+      ).join('');
+
+      const r = anchor.getBoundingClientRect();
+      popup.style.position = 'fixed';
+      popup.style.left = (r.left) + 'px';
+      popup.style.top  = (r.bottom + 6) + 'px';
+      popup.style.minWidth = Math.max(160, r.width) + 'px';
+      popup.style.zIndex = 60;
+      popup.classList.remove('hidden');
+
+      popup.querySelectorAll('[data-subid]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const subId = Number(btn.dataset.subid);
+          renderProducts(p => Number(p.subcategory_id) === subId);
+          popup.classList.add('hidden');
+        });
+      });
+    }
+
+    popup.addEventListener('mouseenter', cancelHide);
+    popup.addEventListener('mouseleave', () => hidePopupSoon(80));
+
+    const allBtn = document.createElement('button');
+    allBtn.className = 'px-3 py-2 rounded bg-blue-600 text-white hover:opacity-90';
+    allBtn.textContent = 'Усі товари';
+    allBtn.addEventListener('click', () => {
+      renderProducts();
+      popup.classList.add('hidden');
+    });
+    nav.appendChild(allBtn);
+
+    const { categories } = await fetch('/api/categories').then(r => r.json());
+
+    categories.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'px-3 py-2 rounded hover:bg-gray-100';
+      btn.textContent = cat.name;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderProducts(p => Number(p.category_id) === Number(cat.id));
+        if (cat.subcategories && cat.subcategories.length) showPopupFor(btn, cat.subcategories);
+        else popup.classList.add('hidden');
+      });
+
+      btn.addEventListener('mouseenter', () => {
+        cancelHide();
+        if (cat.subcategories && cat.subcategories.length) showPopupFor(btn, cat.subcategories);
+      });
+      btn.addEventListener('mouseleave', () => hidePopupSoon(120));
+
+      nav.appendChild(btn);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!popup.classList.contains('hidden')) {
+        const insidePopup = popup.contains(e.target);
+        const insideAnchor = anchorBtn && anchorBtn.contains(e.target);
+        if (!insidePopup && !insideAnchor) popup.classList.add('hidden');
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderCategoriesNav().catch(console.error);
+  });
+  </script>
+
+  <script>
+  /* ──────────────────────────────────────────────────────────
+     МОДАЛКА: галерея з крапками, лічильником, клавішами та свайпом
+     ────────────────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('detail-modal');
+    const panel = modal.querySelector('.rounded-2xl');
+    const imgEl = modal.querySelector('.modal-img');
+    const prevBtn = document.getElementById('modal-prev');
+    const nextBtn = document.getElementById('modal-next');
+
+    // Закриття модалки
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+    panel.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('keydown', (e) => {
+      if (modal.classList.contains('hidden')) return;
+      if (e.key === 'Escape') modal.classList.add('hidden');
+      if (e.key === 'ArrowRight') nextBtn.click();
+      if (e.key === 'ArrowLeft')  prevBtn.click();
+    });
+
+    // К-сть / додавання
+    const minusBtn = modal.querySelector('.modal-qty-minus');
+    const plusBtn  = modal.querySelector('.modal-qty-plus');
+    const qtyInput = modal.querySelector('.modal-qty');
+    const addBtn   = modal.querySelector('.modal-add-btn');
+    const addMark  = modal.querySelector('.modal-add-check');
+
+    minusBtn.addEventListener('click', (e) => { e.stopPropagation(); qtyInput.value = Math.max(1, Number(qtyInput.value||1)-1); });
+    plusBtn.addEventListener('click',  (e) => { e.stopPropagation(); qtyInput.value = Number(qtyInput.value||1)+1; });
+    qtyInput.addEventListener('change', () => { qtyInput.value = Math.max(1, Number(qtyInput.value)||1); });
+
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const qty = Number(qtyInput.value||1);
+      if (window.addCurrentProductToCart) window.addCurrentProductToCart(qty);
+      addBtn.disabled = true;
+      const prev = addBtn.textContent;
+      addBtn.textContent = 'Додано';
+      addMark.classList.remove('opacity-0');
+      setTimeout(() => {
+        addMark.classList.add('opacity-0');
+        addBtn.textContent = prev;
+        addBtn.disabled = false;
+      }, 1200);
+    });
+
+    // Галерея
+    let photos = [];
+    let photoIndex = 0;
+
+    const dotsWrap  = document.getElementById('modal-dots');
+    const counterEl = document.getElementById('modal-counter');
+    const galleryEl = document.getElementById('modal-gallery');
+
+    function updatePager(){
+      if (!dotsWrap) return;
+      [...dotsWrap.children].forEach((d,i) => d.classList.toggle('active', i === photoIndex));
+      if (counterEl) counterEl.textContent = `${photoIndex+1} / ${photos.length}`;
+    }
+    function buildDots(){
+      if (!dotsWrap) return;
+      dotsWrap.innerHTML = '';
+      photos.forEach((_, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dot';
+        b.setAttribute('aria-label', `Фото ${i+1}`);
+        b.addEventListener('click', (e) => { e.stopPropagation(); photoIndex = i; renderPhoto(); });
+        dotsWrap.appendChild(b);
+      });
+    }
+    function renderPhoto(){
+      if (!photos.length) return;
+      if (photoIndex < 0) photoIndex = photos.length-1;
+      if (photoIndex >= photos.length) photoIndex = 0;
+      imgEl.src = photos[photoIndex] || '/assets/img/placeholder.png';
+      updatePager();
+    }
+
+    // Стрілки
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); photoIndex--; renderPhoto(); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); photoIndex++; renderPhoto(); });
+
+    // Свайпи (мобільні)
+    let sx = 0, sy = 0;
+    if (galleryEl) {
+      galleryEl.addEventListener('touchstart', e => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+      }, {passive:true});
+      galleryEl.addEventListener('touchend', e => {
+        const t = e.changedTouches[0]; const dx = t.clientX - sx; const dy = t.clientY - sy;
+        if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) nextBtn.click(); else prevBtn.click();
+        }
+      }, {passive:true});
+    }
+
+    // Заповнення модалки даними (чекаємо кастомну подію detail:ready)
+    document.addEventListener('detail:ready', async () => {
+      const p = (window.productDetail && window.productDetail.current) || {};
+
+      // Фото
+      photos = Array.isArray(p.photos) ? p.photos.slice() : (p.photos ? [p.photos] : []);
+      if (!photos.length) photos = ['/assets/img/placeholder.png'];
+      photoIndex = 0;
+      buildDots();
+      renderPhoto();
+
+      // Ціна/знижка
+      const price = Number(p.price||0);
+      const discount = Number(p.discount||0);
+      const sale = discount ? (price*(100-discount)/100) : price;
+
+      const discEl  = modal.querySelector('.modal-discount');
+      const priceEl = modal.querySelector('.modal-price');
+      const oldEl   = modal.querySelector('.modal-old-price');
+
+      if (discount) {
+        discEl.classList.remove('hidden');
+        discEl.textContent = `Знижка ${discount}%`;
+        oldEl.classList.remove('hidden');
+        oldEl.textContent = `₴${price.toFixed(2)}`;
+      } else {
+        discEl.classList.add('hidden');
+        oldEl.classList.add('hidden');
+      }
+      priceEl.textContent = `₴${sale.toFixed(2)}`;
+
+      // Базова інфа
+      modal.querySelector('.modal-title').textContent    = p.title || '';
+      modal.querySelector('.modal-pos').textContent      = p.pos ? `POS: ${p.pos}` : '';
+      modal.querySelector('.modal-material').textContent = p.material || '—';
+      modal.querySelector('.modal-diameter').textContent = p.diameter || '—';
+      modal.querySelector('.modal-color').textContent    = p.color || '—';
+      modal.querySelector('.modal-volume').textContent   = p.volume || (p.ml ? `${p.ml} мл` : '—');
+      modal.querySelector('.modal-desc').textContent     = p.description || 'Опис відсутній';
+
+// ВАРІАНТИ (мініатюри)
+const variantsRow = modal.querySelector('.modal-variants');
+variantsRow.classList.remove('hidden');
+variantsRow.classList.add('variant-list');
+variantsRow.innerHTML = '';
+
+let variants = (window.productDetail && window.productDetail.variants) || [];
+variants.forEach(v => {
+  const el = document.createElement('button');
+  el.className = 'variant-thumb' + (v.pos === p.pos ? ' selected' : '');
+  el.innerHTML = `<img src="${(v.photos && v.photos[0]) || '/assets/img/placeholder.png'}" alt="${(v.color||'')}" />`;
+  el.title = v.color || '';
+  el.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (v.pos !== p.pos) window.openDetail(v.pos);
+  });
+  variantsRow.appendChild(el);
+});
+
+      // Рекомендації
+      const recWrap = modal.querySelector('.modal-recommendations');
+      const recList = modal.querySelector('.rec-list');
+      const recs = (window.productDetail && window.productDetail.recommendations) || [];
+      if (recs.length) {
+        recWrap.classList.remove('hidden');
+        recList.innerHTML = '';
+        recs.forEach(r => {
+          const a = document.createElement('a');
+          a.href = 'javascript:void(0)';
+          a.className = 'min-w-[160px] bg-gray-50 rounded p-2 shadow hover:shadow-md transition';
+          const rsale = r.discount ? (r.price*(100-r.discount)/100) : r.price;
+          a.innerHTML = `
+            <img src="${(r.photos && r.photos[0]) || '/assets/img/placeholder.png'}"
+                 class="w-full h-24 object-cover rounded mb-2" alt="${r.title||''}">
+            <div class="text-sm font-medium">${r.title||''}</div>
+            <div class="text-xs text-gray-600">₴${Number(rsale||0).toFixed(2)}</div>`;
+          a.addEventListener('click', () => window.openDetail(r.pos));
+          recList.appendChild(a);
+        });
+      } else {
+        recWrap.classList.add('hidden');
+      }
+
+      // Показати модалку
+      addMark.classList.add('opacity-0');
+      qtyInput.value = 1;
+      modal.classList.remove('hidden');
+    });
+  });
+  </script>
+</body>
+</html>

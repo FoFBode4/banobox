@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Banobox — Історія замовлень</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    .card{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.05)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;font-weight:600;transition:all .15s}
+    .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+    .btn-ghost{background:#f3f4f6}.btn-ghost:hover{background:#e5e7eb}
+    .badge{font-size:.75rem;border-radius:999px;padding:.15rem .5rem;display:inline-flex;align-items:center}
+    .badge.gray{background:#f3f4f6;color:#374151}
+    .badge.green{background:#dcfce7;color:#166534}
+    .badge.yellow{background:#fef9c3;color:#854d0e}
+    .badge.red{background:#fee2e2;color:#991b1b}
+    .toast{position:fixed;right:1rem;top:1rem;z-index:50;padding:.75rem 1rem;border-radius:.75rem;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+    .toast-success{background:#16a34a}.toast-error{background:#ef4444}.toast-info{background:#3b82f6}
+    .loader{position:fixed;inset:0;background:rgba(255,255,255,.65);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:40}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Лоадер -->
+  <div id="loader" class="loader">
+    <div class="flex items-center gap-3 text-gray-700">
+      <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 004 12z"></path>
+      </svg>
+      <span>Завантаження…</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Header -->
+  <header class="bg-white border-b sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="text-xl font-semibold text-blue-600">Banobox</a>
+      <nav class="flex items-center gap-4">
+        <a href="index.html#products" class="text-sm text-gray-600 hover:text-gray-900">Каталог</a>
+        <a href="profile.html" class="text-sm text-gray-600 hover:text-gray-900">Профіль</a>
+        <a href="cart.html" class="relative flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+          </svg>
+          <span>Кошик</span>
+          <span class="cart-count absolute -right-2 -top-2 bg-red-500 text-white text-xs rounded-full px-1">0</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-semibold mb-4">Історія замовлень</h1>
+
+    <!-- Якщо користувач не увійшов -->
+    <div id="auth-required" class="hidden card p-6 text-center">
+      <p class="mb-3">Щоб переглядати замовлення — увійдіть у профіль.</p>
+      <a href="profile.html" class="btn btn-primary">Увійти</a>
+    </div>
+
+    <!-- Лейаут -->
+    <div id="orders-layout" class="grid md:grid-cols-12 gap-6">
+      <!-- Список -->
+      <aside class="md:col-span-5 lg:col-span-4">
+        <div class="card">
+          <div class="px-4 py-3 border-b flex items-center gap-2">
+            <input id="orders-search" type="text" placeholder="Пошук за № або датою…" class="w-full border rounded-md px-3 py-2 text-sm" />
+            <button id="orders-refresh" class="btn btn-ghost">Оновити</button>
+          </div>
+          <div id="orders-list" class="divide-y max-h-[70vh] overflow-auto"></div>
+          <div id="orders-debug" class="px-4 py-3 text-xs text-red-600 hidden"></div>
+          <div id="orders-debug-details" class="px-4 py-3 text-xs text-red-600 hidden"></div>
+        </div>
+      </aside>
+
+      <!-- Деталі -->
+      <section class="md:col-span-7 lg:col-span-8">
+        <div id="order-empty" class="card p-8 text-center text-gray-500">
+          Оберіть замовлення зі списку зліва.
+        </div>
+
+        <div id="order-details" class="hidden card">
+          <div class="px-4 py-3 border-b flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Замовлення № <span id="od-id" class="font-medium">—</span></div>
+              <div class="text-xs text-gray-400" id="od-date">—</div>
+            </div>
+            <div id="od-status" class="badge gray">—</div>
+          </div>
+
+          <div class="p-4">
+            <div id="od-meta" class="mb-4 text-sm text-gray-600 hidden"></div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-gray-500 border-b">
+                    <th class="text-left py-2">Вибір</th>
+                    <th class="text-left py-2">Товар</th>
+                    <th class="text-left py-2">Опції</th>
+                    <th class="text-right py-2">Ціна</th>
+                    <th class="text-center py-2">К-сть</th>
+                    <th class="text-right py-2">Сума</th>
+                  </tr>
+                </thead>
+                <tbody id="od-items"></tbody>
+              </table>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <button id="btn-select-all" class="btn btn-ghost">Обрати всі</button>
+                <button id="btn-unselect-all" class="btn btn-ghost">Зняти всі</button>
+                <button id="btn-recalc" class="btn btn-ghost">Перерахувати</button>
+              </div>
+              <div class="text-right">
+                <div class="text-sm text-gray-500">Обрано позицій: <span id="od-picked">0</span></div>
+                <div class="text-lg font-semibold">Разом: ₴<span id="od-total">0.00</span></div>
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <button id="btn-reorder-all" class="btn btn-primary">Замовити всі як було</button>
+              <button id="btn-reorder-picked" class="btn btn-ghost">Додати вибрані до кошика</button>
+              <span id="od-added-mark" class="text-green-600 text-xl opacity-0">✓ Додано в кошик</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="py-8 text-center text-xs text-gray-500">
+    &copy; 2025 Banobox
+  </footer>
+
+  <!-- Кошик та утиліти -->
+  <script defer src="assets/js/banobox.js"></script>
+
+  <!-- Логіка сторінки -->
+  <script>
+    /* ── helpers ───────────────────────────────────────── */
+    function showLoader(on){ document.getElementById('loader').style.display = on ? 'flex' : 'none'; }
+    function toast(msg,type='info'){
+      const t=document.getElementById('toast');
+      t.textContent=msg;
+      t.className='toast '+(type==='success'?'toast-success':type==='error'?'toast-error':'toast-info');
+      t.classList.remove('hidden');
+      setTimeout(()=>t.classList.add('hidden'),2200);
+    }
+    const fmtUA = (d)=> new Date(d).toLocaleString('uk-UA',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+    async function fetchRaw(url, opts = {}){
+      const o = Object.assign({ credentials:'include', cache:'no-store', headers:{'Accept':'application/json'} }, opts);
+      const r = await fetch(url, o);
+      const text = await r.text();
+      let json = null;
+      try { json = JSON.parse(text); } catch {}
+      return { ok: r.ok, status: r.status, json, text, url };
+    }
+
+    /* — універсальні екстрактори — */
+    function extractOrders(payload){
+      if (!payload) return [];
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload.orders)) return payload.orders;
+      if (Array.isArray(payload.data))   return payload.data;
+      return [];
+    }
+    function extractOrder(payload){
+      if (!payload) return null;
+      if (payload.order) return payload.order;
+      if (payload.data && !Array.isArray(payload.data)) return payload.data;
+      return payload;
+    }
+
+    /* Спроба знайти масив позицій у будь-якому вигляді (включно з JSON-рядками) */
+    function tryParseJSON(maybe){
+      if (typeof maybe !== 'string') return null;
+      const t = maybe.trim();
+      if (!(t.startsWith('{') || t.startsWith('['))) return null;
+      try { return JSON.parse(t); } catch { return null; }
+    }
+    function looksLikeItem(x){
+      if (!x || typeof x!=='object') return false;
+      const keys = Object.keys(x).map(k=>k.toLowerCase());
+      return ['pos','sku','code','article','title','name'].some(k => keys.includes(k));
+    }
+    function deepFindItems(obj, depth=0){
+      if (!obj || depth>4) return [];
+      // якщо одразу масив — і елементи схожі на позиції
+      if (Array.isArray(obj) && obj.length && looksLikeItem(obj[0])) return obj;
+
+      // якщо рядок з JSON — спробуємо розпарсити і зануритись
+      if (typeof obj==='string'){
+        const parsed = tryParseJSON(obj);
+        if (parsed) return deepFindItems(parsed, depth+1);
+        return [];
+      }
+
+      if (typeof obj!=='object') return [];
+      // найтиповіші місця
+      const tryKeys = ['items','lines','positions','products','order_items','orderItems','order_lines','orderLines','details','goods','list','products_list','productsList','cart'];
+      for (const k of tryKeys){
+        if (obj[k]){
+          const arr = deepFindItems(obj[k], depth+1);
+          if (arr && arr.length) return arr;
+        }
+      }
+      // перебір усіх ключів
+      for (const k of Object.keys(obj)){
+        const v = obj[k];
+        const arr = deepFindItems(v, depth+1);
+        if (arr && arr.length) return arr;
+      }
+      return [];
+    }
+    function extractItems(payload){
+      if (!payload) return [];
+      // прямий масив
+      if (Array.isArray(payload) && payload.length && looksLikeItem(payload[0])) return payload;
+
+      // найбільш типові назви
+      const direct = [
+        payload.items, payload.lines, payload.positions, payload.products,
+        payload.order_items, payload.orderItems, payload.order_lines, payload.orderLines,
+        payload.details, payload.goods, payload.products_list, payload.productsList
+      ].find(a => Array.isArray(a) && a.length);
+      if (direct) return direct;
+
+      // cart-подібне
+      const cartLike = payload.cart || payload.cart_items || payload.cartItems || null;
+      if (cartLike){
+        if (Array.isArray(cartLike)) return cartLike;
+        if (Array.isArray(cartLike.items)) return cartLike.items;
+        if (Array.isArray(cartLike.products)) return cartLike.products;
+      }
+
+      // вкладені order/data
+      if (payload.order){
+        const a = extractItems(payload.order);
+        if (a.length) return a;
+      }
+      if (payload.data && !Array.isArray(payload.data)){
+        const a = extractItems(payload.data);
+        if (a.length) return a;
+      }
+
+      // як остання спроба — глибокий пошук (у т.ч. по JSON-рядках)
+      return deepFindItems(payload);
+    }
+
+    function statusToColor(s){
+      const v = String(s||'').toLowerCase();
+      if (['new','created','processing','в обробці','pending'].some(x => v.includes(x))) return 'yellow';
+      if (['done','completed','виконано','доставлено','shipped'].some(x => v.includes(x))) return 'green';
+      if (['canceled','cancelled','скасовано'].some(x => v.includes(x))) return 'red';
+      return 'gray';
+    }
+    function escapeHtml(s){
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    /* ── state ─────────────────────────────────────────── */
+    let ORDERS = [];
+    let ACTIVE_ID = null;
+    const user = (()=>{ try{ return JSON.parse(localStorage.getItem('banobox_user')||'{}'); }catch{ return {}; } })();
+
+    /* ── refs ──────────────────────────────────────────── */
+    const authRequired = document.getElementById('auth-required');
+    const layout       = document.getElementById('orders-layout');
+    const listEl       = document.getElementById('orders-list');
+    const searchEl     = document.getElementById('orders-search');
+    const refreshBtn   = document.getElementById('orders-refresh');
+    const debugEl      = document.getElementById('orders-debug');
+    const debugDetails = document.getElementById('orders-debug-details');
+
+    const emptyEl = document.getElementById('order-empty');
+    const detailsEl = document.getElementById('order-details');
+
+    const odId = document.getElementById('od-id');
+    const odDate = document.getElementById('od-date');
+    const odStatus = document.getElementById('od-status');
+    const odMeta = document.getElementById('od-meta');
+    const itemsTbody = document.getElementById('od-items');
+    const pickedEl = document.getElementById('od-picked');
+    const totalEl = document.getElementById('od-total');
+    const reorderAllBtn = document.getElementById('btn-reorder-all');
+    const reorderPickedBtn = document.getElementById('btn-reorder-picked');
+    const addedMark = document.getElementById('od-added-mark');
+
+    /* ── init ──────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.updateCartCount) window.updateCartCount();
+      await initOrdersPage();
+      wireTopControls();
+    });
+
+    async function initOrdersPage(){
+      const res = await tryFetchOrders();
+      if (res.authRequired) {
+        authRequired.classList.remove('hidden');
+        layout.classList.add('hidden');
+        return;
+      }
+      authRequired.classList.add('hidden');
+      layout.classList.remove('hidden');
+
+      ORDERS = res.orders;
+      renderOrdersList(ORDERS);
+      if (ORDERS.length) openOrder(ORDERS[0].id ?? ORDERS[0].number);
+      else { emptyEl.classList.remove('hidden'); detailsEl.classList.add('hidden'); }
+    }
+
+    function wireTopControls(){
+      refreshBtn.addEventListener('click', async() => { showLoader(true); await initOrdersPage(); showLoader(false); });
+      searchEl.addEventListener('input', () => renderOrdersList(filterOrders(searchEl.value.trim())));
+      document.getElementById('btn-select-all').onclick = () => setAllChecked(true);
+      document.getElementById('btn-unselect-all').onclick = () => setAllChecked(false);
+      document.getElementById('btn-recalc').onclick = recalcSummary;
+      reorderAllBtn.onclick = () => reorder(true);
+      reorderPickedBtn.onclick = () => reorder(false);
+    }
+
+    /* ── API: список замовлень ─────────────────────────── */
+    async function tryFetchOrders(){
+      showLoader(true);
+      debugEl.classList.add('hidden');
+      debugEl.textContent = '';
+      const endpoints = [
+        '/api/my/orders',
+        '/api/orders/mine',
+        '/api/orders?me=1',
+        '/api/orders'
+      ];
+      const tries = [];
+      for (const url of endpoints){
+        const r = await fetchRaw(url);
+        tries.push(`${url} → ${r.status}`);
+        if (r.status === 401 || r.status === 403) {
+          showLoader(false);
+          return { authRequired: true, orders: [] };
+        }
+        if (!r.ok) continue;
+        let orders = extractOrders(r.json);
+
+        // якщо це “всі” — звузимо до користувача (id або email з localStorage)
+        if (orders.length && (url === '/api/orders' || url.includes('?me='))){
+          if (user?.id)   orders = orders.filter(o => String(o.user_id||o.userId||'') === String(user.id));
+          else if (user?.email) orders = orders.filter(o => String(o.email||'').toLowerCase() === String(user.email||'').toLowerCase());
+        }
+
+        showLoader(false);
+        return { authRequired: false, orders };
+      }
+      showLoader(false);
+      toast('Не вдалося завантажити замовлення','error');
+      debugEl.textContent = 'Діагностика: \n' + tries.join('\n');
+      debugEl.classList.remove('hidden');
+      return { authRequired:false, orders: [] };
+    }
+
+    /* ── деталі без detail-ендпоінта ───────────────────── */
+    async function openOrder(id){
+      if (!id) return;
+      const localOrder = ORDERS.find(o => String(o.id ?? o.number) === String(id)) || {};
+      const headerOrder = localOrder;
+
+      // шапка
+      odId.textContent = headerOrder.id ?? headerOrder.number ?? id;
+      const dateValH = headerOrder.created_at || headerOrder.createdAt || headerOrder.date || headerOrder.created;
+      odDate.textContent = dateValH ? fmtUA(dateValH) : '';
+      const statusH = headerOrder.status || headerOrder.state || '—';
+      odStatus.textContent = statusH;
+      odStatus.className = 'badge ' + statusToColor(statusH);
+
+      // Позиції: шукаємо прямо в об'єкті замовлення (вкл. JSON-рядки)
+      const items = extractItems(localOrder);
+
+      // додаткова інфа
+      const extras = [];
+      const address = localOrder.address || localOrder.shipping_address || '';
+      const comment = localOrder.comment || localOrder.note || '';
+      if (address) extras.push(`<div><span class="muted">Адреса:</span> ${escapeHtml(address)}</div>`);
+      if (comment) extras.push(`<div><span class="muted">Коментар:</span> ${escapeHtml(comment)}</div>`);
+      if (extras.length){ odMeta.innerHTML = extras.join(''); odMeta.classList.remove('hidden'); }
+      else odMeta.classList.add('hidden');
+
+      renderOrderItems(items);
+
+      document.getElementById('order-empty').classList.add('hidden');
+      document.getElementById('order-details').classList.remove('hidden');
+
+      // якщо не знайшли позицій — покажемо корисну підказку
+      const dd = document.getElementById('orders-debug-details');
+      if (!items.length){
+        dd.textContent = 'Позицій у відповіді на /api/orders немає. '+
+          'Щоб показувати деталі, бек має повертати items (або lines/positions) разом із замовленням, '+
+          'або дати окремий ендпоінт типу /api/orders/{id}/items.';
+        dd.classList.remove('hidden');
+      } else {
+        dd.classList.add('hidden');
+        dd.textContent = '';
+      }
+    }
+
+    /* ── список ────────────────────────────────────────── */
+    function filterOrders(q){
+      if (!q) return ORDERS;
+      const s = q.toLowerCase();
+      return ORDERS.filter(o => {
+        const idStr   = String(o.id || o.number || '').toLowerCase();
+        const dateVal = o.created_at || o.createdAt || o.date || o.created;
+        const dateStr = dateVal ? fmtUA(dateVal).toLowerCase() : '';
+        return idStr.includes(s) || dateStr.includes(s);
+      });
+    }
+
+    function renderOrdersList(list){
+      listEl.innerHTML = '';
+      if (!list.length) {
+        listEl.innerHTML = '<div class="p-6 text-sm text-gray-500 text-center">Замовлень поки немає.</div>';
+        return;
+      }
+      list.forEach(o => {
+        const row = document.createElement('button');
+        row.className = 'w-full text-left p-4 hover:bg-gray-50 flex items-center justify-between';
+        const dateVal = o.created_at || o.createdAt || o.date || o.created;
+        row.innerHTML = `
+          <div>
+            <div class="font-medium">№ ${escapeHtml(o.id ?? o.number)}</div>
+            <div class="text-xs text-gray-500">${dateVal ? fmtUA(dateVal) : ''}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm muted">${o.items_count ?? o.itemsCount ?? (extractItems(o)?.length ?? 0)} поз.</div>
+            <div class="text-sm font-semibold">₴${Number(o.total||0).toFixed(2)}</div>
+          </div>
+        `;
+        row.addEventListener('click', () => openOrder(o.id ?? o.number));
+        listEl.appendChild(row);
+      });
+    }
+
+    /* ── рендер позицій + повторне замовлення ─────────── */
+    function renderOrderItems(items){
+      const itemsTbody = document.getElementById('od-items');
+      const pickedEl = document.getElementById('od-picked');
+      const totalEl = document.getElementById('od-total');
+
+      itemsTbody.innerHTML = '';
+      if (!items.length){
+        itemsTbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-gray-500">Позицій у цьому замовленні не знайдено.</td></tr>';
+        pickedEl.textContent='0'; totalEl.textContent='0.00'; return;
+      }
+      (items||[]).forEach((it, idx) => {
+        const pos   = it.pos || it.sku || it.code || it.article || '';
+        const title = it.title || it.name || pos || 'Товар';
+        const photos= it.photos || it.images || (it.photo ? [it.photo] : []) || (it.image ? [it.image] : []);
+        const qty   = Number(it.quantity || it.qty || 1);
+        const price = Number(it.price ?? it.unit_price ?? it.unitPrice ?? it.amount_per_unit ?? 0);
+        const discount = Number(it.discount || 0);
+        const unit = discount ? +(price*(100-discount)/100).toFixed(2) : +price.toFixed(2);
+        const sum  = unit * qty;
+
+        const volLabel = it.volume_label || it.volume || (it.ml ? `${it.ml} мл` : '');
+        const colLabel = it.color_name || it.color || '';
+        const matLabel = it.material_name || it.material || '';
+
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.dataset.index = idx;
+        tr.innerHTML = `
+          <td class="py-3 align-top">
+            <input type="checkbox" class="pick h-4 w-4" checked>
+          </td>
+          <td class="py-3 align-top">
+            <div class="flex items-start gap-3">
+              <img src="${(photos && photos[0]) || '/assets/img/placeholder.png'}" class="w-16 h-16 object-cover rounded border" alt="">
+              <div>
+                <div class="font-medium">${escapeHtml(title)}</div>
+                <div class="text-xs text-gray-500">POS: ${escapeHtml(pos)}</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 align-top text-sm text-gray-600">
+            ${
+              [ volLabel ? `<span class="inline-block bg-gray-100 rounded px-2 py-0.5 mr-1">Об’єм: ${escapeHtml(volLabel)}</span>` : '',
+                colLabel ? `<span class="inline-block bg-gray-100 rounded px-2 py-0.5 mr-1">Колір: ${escapeHtml(colLabel)}</span>` : '',
+                matLabel ? `<span class="inline-block bg-gray-100 rounded px-2 py-0.5">Матеріал: ${escapeHtml(matLabel)}</span>` : '' ]
+              .join('') || '<span class="text-gray-400">—</span>'
+            }
+          </td>
+          <td class="py-3 align-top text-right">
+            ₴<span class="unit">${unit.toFixed(2)}</span>
+          </td>
+          <td class="py-3 align-top text-center">
+            <input type="number" class="qty w-16 border rounded px-2 py-1 text-center" min="1" value="${qty}">
+          </td>
+          <td class="py-3 align-top text-right">
+            ₴<span class="sum">${sum.toFixed(2)}</span>
+          </td>
+        `;
+        tr._rawItem = Object.assign({}, it, { pos, title, photos, price, discount, volume_label: volLabel, color_name: colLabel, material_name: matLabel });
+        itemsTbody.appendChild(tr);
+      });
+
+      itemsTbody.querySelectorAll('.qty').forEach(inp => {
+        inp.addEventListener('input', () => {
+          if (Number(inp.value) < 1) inp.value = 1;
+          const tr = inp.closest('tr');
+          const unit = Number(tr.querySelector('.unit').textContent);
+          tr.querySelector('.sum').textContent = (unit * Number(inp.value)).toFixed(2);
+          recalcSummary();
+        });
+      });
+      itemsTbody.querySelectorAll('.pick').forEach(ch => {
+        ch.addEventListener('change', recalcSummary);
+      });
+
+      recalcSummary();
+    }
+
+    function setAllChecked(val){
+      document.querySelectorAll('#od-items .pick').forEach(ch => ch.checked = !!val);
+      recalcSummary();
+    }
+    function recalcSummary(){
+      let count = 0, total = 0;
+      document.querySelectorAll('#od-items tr').forEach(tr => {
+        const picked = tr.querySelector('.pick')?.checked;
+        if (!picked) return;
+        const sum = Number(tr.querySelector('.sum')?.textContent) || 0;
+        count++;
+        total += sum;
+      });
+      document.getElementById('od-picked').textContent = count;
+      document.getElementById('od-total').textContent = total.toFixed(2);
+    }
+
+    async function reorder(all){
+      const rows = Array.from(document.querySelectorAll('#od-items tr'));
+      const chosen = rows.filter(tr => all || tr.querySelector('.pick').checked);
+      if (!chosen.length){ toast('Не вибрано жодної позиції','error'); return; }
+
+      for (const tr of chosen) {
+        const it = tr._rawItem || {};
+        const qty = Number(tr.querySelector('.qty').value || 1);
+        let product = {
+          pos: it.pos,
+          title: it.title || it.pos,
+          price: it.price,
+          discount: it.discount,
+          photos: it.photos
+        };
+        try {
+          const r = await fetchRaw(`/api/products/${encodeURIComponent(it.pos)}`);
+          if (r.ok && r.json && r.json.product) product = Object.assign({}, r.json.product, product);
+        } catch {}
+        const opts = {
+          volume_id: it.volume_id ?? product.volume_id ?? null,
+          volume_ml: it.ml ?? product.ml ?? null,
+          volume_label: it.volume_label ?? it.volume ?? (product.ml ? `${product.ml} мл` : null),
+          color_id: it.color_id ?? product.color_id ?? null,
+          color_name: it.color_name ?? it.color ?? product.color ?? null,
+          material_id: it.material_id ?? product.material_id ?? null,
+          material_name: it.material_name ?? it.material ?? product.material ?? null
+        };
+        if (window.addToCart) window.addToCart(product, qty, opts);
+      }
+      if (window.updateCartCount) window.updateCartCount();
+
+      const addedMark = document.getElementById('od-added-mark');
+      addedMark.classList.remove('opacity-0');
+      setTimeout(() => addedMark.classList.add('opacity-0'), 1200);
+      toast('Додано до кошика','success');
+    }
+  </script>
+</body>
+</html>
